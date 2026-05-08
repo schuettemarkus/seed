@@ -82,42 +82,48 @@ export function ChildSetup() {
     setLoading(true)
     setError(null)
 
-    const childData = {
-      parent_id: user.id,
-      name,
-      age,
-      gender,
-      language,
-      subjects,
-      pedagogy_lean: pedagogyLean,
-      content_axis: contentAxis,
-      content_axis_notes: contentAxis === 'other' ? contentAxisNotes : null,
-      accommodations,
-      avatar_color: avatarColor,
+    try {
+      const childData = {
+        parent_id: user.id,
+        name,
+        age,
+        gender,
+        language,
+        subjects,
+        pedagogy_lean: pedagogyLean,
+        content_axis: contentAxis,
+        content_axis_notes: contentAxis === 'other' ? contentAxisNotes : null,
+        accommodations,
+        avatar_color: avatarColor,
+      }
+
+      if (isEdit && childId) {
+        const { error: err } = await supabase
+          .from('children')
+          .update(childData)
+          .eq('id', childId)
+        if (err) { setError(err.message); setLoading(false); return }
+      } else {
+        const { data: newChild, error: err } = await supabase
+          .from('children')
+          .insert(childData)
+          .select()
+          .single()
+        if (err || !newChild) { setError(err?.message ?? 'Failed to create child'); setLoading(false); return }
+
+        // Log COPPA consent for this child (non-blocking)
+        await supabase.from('parental_consents').insert(
+          buildConsentRecord(user.id, newChild.id),
+        )
+      }
+
+      setLoading(false)
+      navigate('/home')
+    } catch (e) {
+      console.error('handleSave unexpected error:', e)
+      setError(e instanceof Error ? e.message : 'An unexpected error occurred')
+      setLoading(false)
     }
-
-    if (isEdit && childId) {
-      const { error: err } = await supabase
-        .from('children')
-        .update(childData)
-        .eq('id', childId)
-      if (err) { setError(err.message); setLoading(false); return }
-    } else {
-      const { data: newChild, error: err } = await supabase
-        .from('children')
-        .insert(childData)
-        .select()
-        .single()
-      if (err || !newChild) { setError(err?.message ?? 'Failed to create child'); setLoading(false); return }
-
-      // Log COPPA consent for this child
-      await supabase.from('parental_consents').insert(
-        buildConsentRecord(user.id, newChild.id),
-      )
-    }
-
-    setLoading(false)
-    navigate('/home')
   }
 
   const canNext = () => {
