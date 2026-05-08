@@ -220,29 +220,31 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
         <h3 className="font-display text-lg font-semibold">{segment.title}</h3>
         <div className="lesson-text text-muted leading-relaxed">{segment.content}</div>
 
-        {/* Interactive element */}
-        {segment.instructions && segment.type === 'text' ? (
+        {/* Instructions or interactive element */}
+        {segment.instructions && (
           <div className="rounded-lg bg-sage/5 border border-sage/20 p-4">
             <p className="text-sm font-medium text-sage">{segment.instructions}</p>
           </div>
-        ) : (
+        )}
+
+        {/* Specialized interactive widgets (drag-drop, draw, etc.) */}
+        {segment.type !== 'text' && segment.type !== 'interactive' && (
           <InteractiveSegment segment={segment} onSegmentComplete={handleNext} />
         )}
       </div>
 
-      {/* Next button (for non-interactive segments) */}
-      {(segment.type === 'text' || segment.type === 'interactive') && (
-        <button
-          onClick={handleNext}
-          className="w-full rounded-lg bg-sage py-3 text-sm font-medium text-white hover:bg-sage-dark transition-colors touch-target flex items-center justify-center gap-2"
-        >
-          {isLast ? (
-            <><CheckCircle2 className="h-4 w-4" /> Complete lesson</>
-          ) : (
-            <>Next <ChevronRight className="h-4 w-4" /></>
-          )}
-        </button>
-      )}
+      {/* Next / Complete button — always shown for text and interactive segments,
+           and as fallback for specialized segments that don't self-advance */}
+      <button
+        onClick={handleNext}
+        className="w-full rounded-lg bg-sage py-3 text-sm font-medium text-white hover:bg-sage-dark transition-colors touch-target flex items-center justify-center gap-2"
+      >
+        {isLast ? (
+          <><CheckCircle2 className="h-4 w-4" /> Complete lesson</>
+        ) : (
+          <>Next <ChevronRight className="h-4 w-4" /></>
+        )}
+      </button>
     </div>
   )
 }

@@ -10,4 +10,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api/claude': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        rewrite: () => '/v1/messages',
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            const apiKey = process.env.VITE_ANTHROPIC_API_KEY ?? ''
+            proxyReq.setHeader('x-api-key', apiKey)
+            proxyReq.setHeader('anthropic-version', '2023-06-01')
+          })
+        },
+      },
+    },
+  },
 })
