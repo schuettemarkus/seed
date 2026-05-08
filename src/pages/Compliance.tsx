@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ArrowLeft, FileText, Printer } from 'lucide-react'
+import { escapeHtml } from '@/lib/sanitize'
 import type { Lesson, Subject } from '@/types'
 
 const STATES = [
@@ -18,6 +19,7 @@ const STATES = [
   { code: 'PA', name: 'Pennsylvania', requirement: 'Portfolio review + evaluator, standardized tests at grades 3/5/8' },
   { code: 'TN', name: 'Tennessee', requirement: 'Attendance records 4hrs/day 180 days, standardized tests grades 5/7/9' },
   { code: 'OH', name: 'Ohio', requirement: 'Annual notification, 900 hours instruction, annual assessment' },
+  { code: 'UT', name: 'Utah', requirement: 'Annual affidavit filed with school district, instruction in required subjects' },
 ]
 
 const SUBJECT_LABELS: Record<Subject, string> = {
@@ -69,7 +71,7 @@ export function Compliance() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Compliance Report — ${child.name} — ${stateInfo?.name ?? state}</title>
+        <title>Compliance Report — ${escapeHtml(child.name)} — ${escapeHtml(stateInfo?.name ?? state)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
           body { font-family: 'Inter', sans-serif; max-width: 700px; margin: 0 auto; padding: 40px 24px; color: #1A1A1A; font-size: 14px; line-height: 1.6; }
@@ -88,7 +90,7 @@ export function Compliance() {
       </head>
       <body>
         <h1>Homeschool Compliance Report</h1>
-        <p class="meta">${child.name}, Age ${child.age} · ${stateInfo?.name ?? state} · Generated ${new Date().toLocaleDateString()}</p>
+        <p class="meta">${escapeHtml(child.name)}, Age ${child.age} · ${escapeHtml(stateInfo?.name ?? state)} · Generated ${new Date().toLocaleDateString()}</p>
 
         <h2>State Requirement: ${stateInfo?.name ?? state}</h2>
         <p>${stateInfo?.requirement ?? 'See your state homeschool laws for specific requirements.'}</p>

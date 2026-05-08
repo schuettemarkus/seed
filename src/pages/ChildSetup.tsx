@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useChild } from '@/hooks/useChild'
@@ -52,7 +52,7 @@ export function ChildSetup() {
   const [error, setError] = useState<string | null>(null)
 
   // Populate from existing child on edit
-  useState(() => {
+  useEffect(() => {
     if (existingChild) {
       setName(existingChild.name)
       setAge(existingChild.age)
@@ -65,7 +65,7 @@ export function ChildSetup() {
       setAccommodations(existingChild.accommodations)
       setAvatarColor(existingChild.avatar_color)
     }
-  })
+  }, [existingChild])
 
   function toggleSubject(s: Subject) {
     setSubjects((prev) =>

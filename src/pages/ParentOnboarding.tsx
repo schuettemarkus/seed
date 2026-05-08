@@ -34,7 +34,7 @@ export function ParentOnboarding() {
 
     const { error: err } = await supabase.from('parents').upsert({
       id: user.id,
-      email: user.email!,
+      email: user.email ?? '',
       full_name: fullName,
       timezone,
       default_content_axis: contentAxis,

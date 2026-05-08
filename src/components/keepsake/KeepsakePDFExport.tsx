@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { escapeHtml } from '@/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import type { Child, PortfolioEntry } from '@/types'
@@ -58,49 +59,49 @@ export function KeepsakePDFExport({ child }: Props) {
       </head>
       <body>
         <div class="cover-icon">🌱</div>
-        <h1>${child.name}'s Year in Review</h1>
+        <h1>${escapeHtml(child.name)}'s Year in Review</h1>
         <p class="subtitle">Age ${child.age} · A keepsake from Seed</p>
 
         ${milestones.length > 0 ? `
           <h2>Milestones</h2>
-          ${milestones.map((e) => `
+          ${milestones.map((entry) => `
             <div class="entry">
-              <div class="entry-title">${e.title ?? 'Milestone'}</div>
-              <div class="entry-date">${new Date(e.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
-              ${e.caption ? `<div class="entry-caption">${e.caption}</div>` : ''}
+              <div class="entry-title">${escapeHtml(entry.title ?? 'Milestone')}</div>
+              <div class="entry-date">${new Date(entry.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+              ${entry.caption ? `<div class="entry-caption">${escapeHtml(entry.caption)}</div>` : ''}
             </div>
           `).join('')}
         ` : ''}
 
         ${favorites.length > 0 ? `
           <h2>Parent Favorites</h2>
-          ${favorites.map((e) => `
+          ${favorites.map((entry) => `
             <div class="entry">
-              <div class="entry-title">${e.title ?? e.entry_type}</div>
-              <div class="entry-date">${new Date(e.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
-              ${e.caption ? `<div class="entry-caption">${e.caption}</div>` : ''}
+              <div class="entry-title">${escapeHtml(entry.title ?? entry.entry_type)}</div>
+              <div class="entry-date">${new Date(entry.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
+              ${entry.caption ? `<div class="entry-caption">${escapeHtml(entry.caption)}</div>` : ''}
             </div>
           `).join('')}
         ` : ''}
 
         ${drawings.length > 0 ? `
           <h2>Artwork</h2>
-          ${drawings.map((e) => `
+          ${drawings.map((entry) => `
             <div class="entry">
-              <div class="entry-title">${e.title ?? 'Drawing'}</div>
-              <div class="entry-date">${new Date(e.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
-              ${e.storage_path ? `<img src="${e.storage_path}" style="max-width:100%;margin-top:8px;border-radius:8px;" />` : ''}
+              <div class="entry-title">${escapeHtml(entry.title ?? 'Drawing')}</div>
+              <div class="entry-date">${new Date(entry.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
+              ${entry.storage_path ? `<img src="${escapeHtml(entry.storage_path)}" style="max-width:100%;margin-top:8px;border-radius:8px;" />` : ''}
             </div>
           `).join('')}
         ` : ''}
 
         ${writings.length > 0 ? `
           <h2>Writing</h2>
-          ${writings.map((e) => `
+          ${writings.map((entry) => `
             <div class="entry">
-              <div class="entry-title">${e.title ?? 'Writing'}</div>
-              <div class="entry-date">${new Date(e.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
-              ${e.caption ? `<div class="entry-caption">${e.caption}</div>` : ''}
+              <div class="entry-title">${escapeHtml(entry.title ?? 'Writing')}</div>
+              <div class="entry-date">${new Date(entry.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>
+              ${entry.caption ? `<div class="entry-caption">${escapeHtml(entry.caption)}</div>` : ''}
             </div>
           `).join('')}
         ` : ''}

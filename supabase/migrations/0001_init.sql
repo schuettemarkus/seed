@@ -201,56 +201,63 @@ alter table usage_logs enable row level security;
 
 -- Parent owns their own row
 create policy "parents_self" on parents
-  for all using (id = auth.uid());
+  for all using (id = auth.uid()) with check (id = auth.uid());
 
 -- Parent owns their children
 create policy "parents_own_children" on children
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
 
 -- Parent owns consents
 create policy "parents_own_consents" on parental_consents
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
 
 -- Parent owns invites
 create policy "parents_own_invites" on family_invites
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
 
 -- Curricula via child ownership
 create policy "parents_own_curricula" on curricula
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Lessons via child ownership
 create policy "parents_own_lessons" on lessons
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Lesson progress via child ownership
 create policy "parents_own_progress" on lesson_progress
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Lesson feedback
 create policy "parents_own_feedback" on lesson_feedback
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
 
 -- Mastery via child ownership
 create policy "parents_own_mastery" on mastery_state
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Wonder questions via child ownership
 create policy "parents_own_wonder" on wonder_questions
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Portfolio via child ownership
 create policy "parents_own_portfolio" on portfolio_entries
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Family rhythm
 create policy "parents_own_rhythm" on family_rhythm
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
 
 -- Compliance via child ownership
 create policy "parents_own_compliance" on compliance_logs
-  for all using (child_id in (select id from children where parent_id = auth.uid()));
+  for all using (child_id in (select id from children where parent_id = auth.uid()))
+  with check (child_id in (select id from children where parent_id = auth.uid()));
 
 -- Usage logs
 create policy "parents_own_usage" on usage_logs
-  for all using (parent_id = auth.uid());
+  for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());

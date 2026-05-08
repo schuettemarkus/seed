@@ -1,65 +1,75 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { ErrorBoundary } from '@/components/layout/ErrorBoundary'
 import { Landing } from '@/pages/Landing'
 import { SignUp } from '@/pages/SignUp'
 import { SignIn } from '@/pages/SignIn'
-import { COPPAConsent } from '@/pages/COPPAConsent'
-import { ParentOnboarding } from '@/pages/ParentOnboarding'
-import { ChildSetup } from '@/pages/ChildSetup'
-import { FamilyHome } from '@/pages/FamilyHome'
-import { Settings } from '@/pages/Settings'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
-import { ChildToday } from '@/pages/ChildToday'
-import { LessonView } from '@/pages/LessonView'
-import { ParentDashboard } from '@/pages/ParentDashboard'
-import { WonderWall } from '@/pages/WonderWall'
-import { Keepsake } from '@/pages/Keepsake'
-import { Rhythm } from '@/pages/Rhythm'
-import { Compliance } from '@/pages/Compliance'
-import { InviteAccept } from '@/pages/InviteAccept'
+
+// Lazy-loaded routes (code-split for performance)
+const COPPAConsent = lazy(() => import('@/pages/COPPAConsent').then((m) => ({ default: m.COPPAConsent })))
+const ParentOnboarding = lazy(() => import('@/pages/ParentOnboarding').then((m) => ({ default: m.ParentOnboarding })))
+const ChildSetup = lazy(() => import('@/pages/ChildSetup').then((m) => ({ default: m.ChildSetup })))
+const FamilyHome = lazy(() => import('@/pages/FamilyHome').then((m) => ({ default: m.FamilyHome })))
+const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })))
+const ChildToday = lazy(() => import('@/pages/ChildToday').then((m) => ({ default: m.ChildToday })))
+const LessonView = lazy(() => import('@/pages/LessonView').then((m) => ({ default: m.LessonView })))
+const ParentDashboard = lazy(() => import('@/pages/ParentDashboard').then((m) => ({ default: m.ParentDashboard })))
+const WonderWall = lazy(() => import('@/pages/WonderWall').then((m) => ({ default: m.WonderWall })))
+const Keepsake = lazy(() => import('@/pages/Keepsake').then((m) => ({ default: m.Keepsake })))
+const Rhythm = lazy(() => import('@/pages/Rhythm').then((m) => ({ default: m.Rhythm })))
+const Compliance = lazy(() => import('@/pages/Compliance').then((m) => ({ default: m.Compliance })))
+const InviteAccept = lazy(() => import('@/pages/InviteAccept').then((m) => ({ default: m.InviteAccept })))
+
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="text-muted font-display text-lg">Loading...</div>
+    </div>
+  )
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted font-display text-lg">Loading...</div>
-      </div>
-    )
-  }
+  if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/signin" replace />
   return <>{children}</>
 }
 
 export function App() {
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={<Landing />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<TermsOfService />} />
+    <ErrorBoundary>
+      <Suspense fallback={<LoadingScreen />}>
+        <Routes>
+          {/* Public */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
 
-      {/* Protected — Parent flows */}
-      <Route path="/consent" element={<ProtectedRoute><COPPAConsent /></ProtectedRoute>} />
-      <Route path="/onboarding" element={<ProtectedRoute><ParentOnboarding /></ProtectedRoute>} />
-      <Route path="/child/new" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
-      <Route path="/child/:childId/edit" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
-      <Route path="/home" element={<ProtectedRoute><FamilyHome /></ProtectedRoute>} />
-      <Route path="/child/:childId/today" element={<ProtectedRoute><ChildToday /></ProtectedRoute>} />
-      <Route path="/child/:childId/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
-      <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonView /></ProtectedRoute>} />
-      <Route path="/child/:childId/wonder" element={<ProtectedRoute><WonderWall /></ProtectedRoute>} />
-      <Route path="/child/:childId/keepsake" element={<ProtectedRoute><Keepsake /></ProtectedRoute>} />
-      <Route path="/rhythm" element={<ProtectedRoute><Rhythm /></ProtectedRoute>} />
-      <Route path="/child/:childId/compliance" element={<ProtectedRoute><Compliance /></ProtectedRoute>} />
-      <Route path="/invite" element={<InviteAccept />} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          {/* Protected — Parent flows */}
+          <Route path="/consent" element={<ProtectedRoute><COPPAConsent /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><ParentOnboarding /></ProtectedRoute>} />
+          <Route path="/child/new" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
+          <Route path="/child/:childId/edit" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
+          <Route path="/home" element={<ProtectedRoute><FamilyHome /></ProtectedRoute>} />
+          <Route path="/child/:childId/today" element={<ProtectedRoute><ChildToday /></ProtectedRoute>} />
+          <Route path="/child/:childId/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+          <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonView /></ProtectedRoute>} />
+          <Route path="/child/:childId/wonder" element={<ProtectedRoute><WonderWall /></ProtectedRoute>} />
+          <Route path="/child/:childId/keepsake" element={<ProtectedRoute><Keepsake /></ProtectedRoute>} />
+          <Route path="/rhythm" element={<ProtectedRoute><Rhythm /></ProtectedRoute>} />
+          <Route path="/child/:childId/compliance" element={<ProtectedRoute><Compliance /></ProtectedRoute>} />
+          <Route path="/invite" element={<InviteAccept />} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
-      {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   )
 }
