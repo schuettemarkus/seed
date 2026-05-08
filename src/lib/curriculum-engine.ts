@@ -89,74 +89,82 @@ export interface LessonGenerationRequest {
 export function buildLessonPrompt(req: LessonGenerationRequest): string {
   const { child, subject, conceptNode, priorLessonSummaries } = req
   const attention = getAttentionConfig(child.age)
-  const pedagogy = PEDAGOGY_SOURCES[subject]
 
   const blockMinutes = child.accommodations.shorter_blocks
     ? Math.round(attention.singleBlockMinutes * 0.7)
     : attention.singleBlockMinutes
 
-  return `You are Seed's curriculum engine. Generate a single lesson for a ${child.age}-year-old child.
+  const pronouns = child.gender === 'they' ? 'they/them/their' : child.gender === 'he' ? 'he/him/his' : 'she/her/her'
 
-CHILD PROFILE:
-- Age: ${child.age}
-- Pronouns: ${child.gender}
-- Language: ${child.language}
-- Pedagogy lean: ${child.pedagogy_lean}
-- Content axis: ${child.content_axis}${child.content_axis_notes ? ` (Notes: ${child.content_axis_notes})` : ''}
-- Accommodations: ${Object.entries(child.accommodations).filter(([, v]) => v).map(([k]) => k).join(', ') || 'none'}
+  const ageGuidance = child.age <= 6
+    ? `This child is ${child.age}. Write like you're a warm, patient kindergarten teacher sitting on the floor with them. Use simple words (1-2 syllables preferred). Short sentences (5-10 words). Lots of concrete examples they can see, touch, or act out. Use storytelling and imagination ("Pretend you're a..."). Reference things they know: animals, toys, food, family, playground. NEVER use abstract language.`
+    : child.age <= 8
+    ? `This child is ${child.age}. Write like a favorite 2nd-grade teacher who makes everything an adventure. Sentences can be longer but stay concrete. Use "you" language. Include hands-on activities (draw, count objects, sort things). Light humor is great. They can read simple paragraphs.`
+    : child.age <= 10
+    ? `This child is ${child.age}. Write like an engaging 4th-grade teacher who treats them as capable thinkers. They can handle multi-step reasoning, longer text, and real-world connections. Challenge them gently. Introduce "why" and "how" questions. They enjoy feeling smart.`
+    : `This child is ${child.age}. Write like a respected mentor who takes their thinking seriously. They can handle nuance, debate, and real complexity. Use sophisticated vocabulary (but explain new terms). Connect to current events, technology, and their future. They want to feel like they're learning real, important things — not "kid stuff."`
 
-LESSON PARAMETERS:
-- Subject: ${subject}
-- Concept: ${conceptNode}
-- Pedagogy source: ${pedagogy}
-- Max block length: ${blockMinutes} minutes
-- Estimated total: ${blockMinutes} minutes
+  return `You are the world's best ${subject.replace('_', ' ')} teacher, creating a single personalized lesson.
 
-${priorLessonSummaries?.length ? `PRIOR LESSON CONTEXT:\n${priorLessonSummaries.join('\n')}\n` : ''}
+YOUR STUDENT:
+- Name context: use "you" — never use their name
+- Age: ${child.age} years old
+- Pronouns: ${pronouns}
+- Language: ${child.language === 'en' ? 'English' : child.language}
+- Content approach: ${child.content_axis}${child.content_axis_notes ? ' — ' + child.content_axis_notes : ''}
+${Object.entries(child.accommodations).filter(([, v]) => v).map(([k]) => '- Accommodation: ' + k.replace(/_/g, ' ')).join('\n')}
 
-OUTPUT FORMAT (JSON):
+AGE-CALIBRATION (THIS IS CRITICAL):
+${ageGuidance}
+
+LESSON TOPIC: ${conceptNode.replace(/-/g, ' ')}
+SUBJECT: ${subject.replace('_', ' ')}
+TARGET LENGTH: ${blockMinutes} minutes of focused learning
+
+${priorLessonSummaries?.length ? 'PRIOR LESSONS (for continuity):\n' + priorLessonSummaries.join('\n') + '\n' : ''}
+WHAT MAKES A WORLD-CLASS LESSON:
+1. HOOK — Open with something that makes them curious. A surprising fact, a "what if" scenario, or a mystery to solve. Never "Today we're going to learn about X."
+2. TEACH REAL CONTENT — Every segment must contain actual knowledge, not meta-commentary about learning. Teach specific facts, skills, or principles. A child should finish knowing something concrete they didn't know before.
+3. MAKE IT TANGIBLE — Give examples from their world. For a 5-year-old: toys, animals, snacks, playground. For a 10-year-old: sports, games, technology, nature. For a 13-year-old: social media, career paths, science breakthroughs.
+4. BUILD UNDERSTANDING — Scaffold from what they know to what's new. Each segment builds on the previous one.
+5. END WITH WONDER — Leave them with a question or idea that sticks with them after the lesson ends.
+
+MODERN WORLD CONNECTION:
+Naturally connect the topic to today's world — technology, science, real careers, how things actually work. For ages 5-7, relate to tech they see (tablets, robots, video calls). For ages 8-10, introduce how computers and data relate. For ages 11+, connect to AI, coding, data science, digital ethics, and future career paths. Never forced — only when it genuinely enriches understanding.
+
+OUTPUT — Return ONLY valid JSON, no markdown code blocks:
 {
-  "title": "engaging lesson title",
-  "hook": "1-2 sentences of curiosity to open the lesson",
+  "title": "A creative, kid-friendly title (no dashes, no subject labels)",
+  "hook": "1-2 sentences that spark immediate curiosity",
   "segments": [
     {
-      "type": "text|drag_drop|draw|voice|click_explore|simulation|interactive",
-      "title": "segment title",
-      "content": "the actual learning content — age-appropriate, warm, clear",
-      "instructions": "what the child does in this segment",
-      "data": {} // optional structured data for interactive segments
+      "type": "text",
+      "title": "Short engaging section title",
+      "content": "The actual teaching content — rich, specific, age-appropriate. 3-6 sentences for young kids, 5-10 for older. TEACH something real here.",
+      "instructions": "What the child should do, think about, or try"
     }
   ],
   "questions": [
-    { "question": "check-for-understanding question", "answer": "expected answer", "hint": "gentle hint" }
+    { "question": "A thought-provoking check-for-understanding question", "answer": "The expected answer", "hint": "A gentle nudge in the right direction" }
   ],
   "movement_break": {
-    "activity": "age-appropriate movement or breathing activity",
-    "duration_minutes": 2
-  },
-  "wonder_prompt": "an optional 'I wonder...' question to spark curiosity"
+    "activity": "A specific, fun, ${blockMinutes <= 10 ? '1' : '2'}-minute movement activity appropriate for a ${child.age}-year-old",
+    "duration_minutes": ${blockMinutes <= 10 ? 1 : 2}
+  }
 }
 
-STEM & MODERN WORLD INTEGRATION:
-Seed is the most modern learning platform — every lesson should feel connected to today's world.
-- Weave STEM thinking (engineering design, scientific method, data reasoning) into every subject naturally
-- Connect concepts to real technology, AI, coding, data, and modern innovation where relevant
-- For younger kids (5-7): relate to technology they see (robots, voice assistants, tablets, sensors)
-- For middle kids (8-10): introduce computational thinking, how data/algorithms work, coding concepts
-- For older kids (11-13): AI/ML foundations, data science, digital ethics, prompt engineering, future of work
-- Always frame technology as a tool humans direct — emphasize critical thinking about tech, not blind adoption
-
-RULES:
-- 3-5 segments that cycle through different interaction modes
-- Content must be accurate, age-appropriate, and warm
-- Use ${child.gender === 'they' ? 'they/them' : child.gender === 'he' ? 'he/him' : 'she/her'} pronouns in any narrative
-- Honor the content axis: ${child.content_axis}
-- No badges, points, or gamification language
-- No violence, romantic content, scary imagery, ads, brands, or links
-- Socratic tone — guide discovery, don't lecture
-- Movement break should be calm and age-appropriate
-${child.accommodations.faster_pacing ? '- Skip intro recaps, surface challenge variants' : ''}
-${child.accommodations.dyslexia_font ? '- Use shorter sentences, simpler vocabulary where possible' : ''}`
+REQUIREMENTS:
+- 3-4 segments for ages 5-8, 4-5 segments for ages 9-13
+- Cycle segment types: text, then interactive, then text — vary the rhythm
+- Content must be factually accurate and genuinely educational
+- Warm, encouraging tone — never condescending
+- No pedagogy method names (no "Singapore Math", "Montessori", etc.)
+- No badges, points, streaks, or gamification language
+- No violence, romantic content, or scary imagery
+- Movement break: specific and fun, not generic "do jumping jacks"
+${child.accommodations.faster_pacing ? '- FASTER PACING: Skip recap, go straight to new material, include challenge extensions' : ''}
+${child.accommodations.dyslexia_font ? '- DYSLEXIA SUPPORT: Shorter sentences, simpler vocabulary, more whitespace in content' : ''}
+${child.accommodations.shorter_blocks ? '- SHORTER BLOCKS: Compress to essential content only, fewer segments' : ''}`
 }
 
 export function buildScheduleForWeek(
