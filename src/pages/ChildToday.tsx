@@ -42,16 +42,24 @@ export function ChildToday() {
   const { lessons, loading, completedCount, totalCount, refetch } = useTodayPath(childId)
   const { classes } = useAccommodations(child?.accommodations)
   const [generating, setGenerating] = useState(false)
-  const generatedRef = useRef(false)
+  const generatingRef = useRef(false)
 
   // Auto-generate today's lessons if none exist
   useEffect(() => {
-    if (!child || loading || lessons.length > 0 || generatedRef.current) return
-    generatedRef.current = true
+    if (!child || loading || lessons.length > 0 || generatingRef.current) return
+    generatingRef.current = true
     setGenerating(true)
+    console.log('[Seed] Generating lessons for', child.name, '...')
     generateTodayLessons(child).then(() => {
-      refetch()
+      console.log('[Seed] Lesson generation complete, refetching...')
+      refetch().then(() => {
+        setGenerating(false)
+        generatingRef.current = false
+      })
+    }).catch((err) => {
+      console.error('[Seed] Lesson generation failed:', err)
       setGenerating(false)
+      generatingRef.current = false
     })
   }, [child, loading, lessons.length, refetch])
 

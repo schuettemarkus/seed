@@ -252,9 +252,17 @@ export async function generateTodayLessons(child: Child): Promise<void> {
 
     let lesson: LessonData
     if (AI_ENABLED) {
+      console.log('[Seed] AI generating:', subject, concept)
       const aiLesson = await generateWithClaude(child, subject, concept, blockMinutes)
-      lesson = aiLesson ?? BUILDERS[subject](concept, child, blockMinutes)
+      if (aiLesson) {
+        console.log('[Seed] AI lesson created:', aiLesson.title)
+        lesson = aiLesson
+      } else {
+        console.warn('[Seed] AI failed, using template for:', subject)
+        lesson = BUILDERS[subject](concept, child, blockMinutes)
+      }
     } else {
+      console.log('[Seed] AI not enabled, using template for:', subject)
       lesson = BUILDERS[subject](concept, child, blockMinutes)
     }
 
@@ -322,7 +330,7 @@ async function generateWithClaude(
       questions: parsed.questions ?? [],
       movement_break: parsed.movement_break ?? { activity: 'Take a stretch break!', duration_minutes: 2 },
       estimated_minutes: minutes,
-      pedagogy_source: null as unknown as string,
+      pedagogy_source: 'claude-ai',
       content_axis: child.content_axis,
       language: child.language,
       status: 'pending' as const,
