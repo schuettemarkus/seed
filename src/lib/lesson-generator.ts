@@ -255,9 +255,21 @@ export async function generateTodayLessons(
     ? Math.round(attention.singleBlockMinutes * 0.7)
     : attention.singleBlockMinutes
 
-  const total = child.subjects.length
-  for (let i = 0; i < child.subjects.length; i++) {
-    const subject = child.subjects[i]
+  // Find which subjects still need lessons today
+  const { data: existingLessons } = await supabase
+    .from('lessons')
+    .select('subject')
+    .eq('child_id', child.id)
+    .eq('scheduled_for', today)
+
+  const existingSubjects = new Set((existingLessons ?? []).map((l: { subject: string }) => l.subject))
+  const missingSubjects = child.subjects.filter((s) => !existingSubjects.has(s))
+
+  if (missingSubjects.length === 0) return
+
+  const total = missingSubjects.length
+  for (let i = 0; i < missingSubjects.length; i++) {
+    const subject = missingSubjects[i]
     const concepts = getNextConcepts(child, subject, completedConcepts, 1)
     const concept = concepts[0] ?? getConceptsForChild(child, subject)[0]
     const label = subject.replace('_', ' ')
@@ -331,18 +343,31 @@ async function generateWithClaude(
 
     const parsed = JSON.parse(jsonMatch[0])
 
+    // Validate required fields
+    if (!parsed.title || !parsed.segments || !Array.isArray(parsed.segments) || parsed.segments.length === 0) {
+      if (import.meta.env.DEV) console.warn('[Seed] Claude returned invalid lesson structure:', parsed)
+      return null
+    }
+
+    // Validate each segment has content
+    const validSegments = parsed.segments
+      .filter((s: Record<string, string>) => s.content && s.title)
+      .map((s: Record<string, string>) => ({
+        type: s.type ?? 'text',
+        title: s.title,
+        content: s.content,
+        instructions: s.instructions ?? '',
+      }))
+
+    if (validSegments.length === 0) return null
+
     return {
       subject,
       concept_node: concept,
-      title: parsed.title ?? fmt(concept),
+      title: parsed.title,
       hook: parsed.hook ?? null,
-      segments: (parsed.segments ?? []).map((s: Record<string, string>) => ({
-        type: s.type ?? 'text',
-        title: s.title ?? '',
-        content: s.content ?? '',
-        instructions: s.instructions ?? '',
-      })),
-      questions: parsed.questions ?? [],
+      segments: validSegments,
+      questions: Array.isArray(parsed.questions) ? parsed.questions.filter((q: Record<string, string>) => q.question) : [],
       movement_break: parsed.movement_break ?? { activity: 'Take a stretch break!', duration_minutes: 2 },
       estimated_minutes: minutes,
       pedagogy_source: 'claude-ai',

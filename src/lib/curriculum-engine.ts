@@ -104,15 +104,35 @@ export function buildLessonPrompt(req: LessonGenerationRequest): string {
     ? `This child is ${child.age}. Write like an engaging 4th-grade teacher who treats them as capable thinkers. They can handle multi-step reasoning, longer text, and real-world connections. Challenge them gently. Introduce "why" and "how" questions. They enjoy feeling smart.`
     : `This child is ${child.age}. Write like a respected mentor who takes their thinking seriously. They can handle nuance, debate, and real complexity. Use sophisticated vocabulary (but explain new terms). Connect to current events, technology, and their future. They want to feel like they're learning real, important things — not "kid stuff."`
 
+  const contentAxisGuidance: Record<string, string> = {
+    secular: 'Use standard scientific consensus throughout. Present holidays and cultural topics from a cultural/historical lens. No religious framing.',
+    faith_neutral: 'Avoid taking positions on creation/origin-of-life topics. Present diverse perspectives respectfully. Include world cultures and holidays broadly.',
+    christian: 'Integrate Christian perspective naturally where relevant. In science, present scientific consensus AND acknowledge God as creator ("Many Christians see God\'s design in..."). Reference Biblical stories, values, or principles where they connect to the topic. Include faith-aligned examples. Be respectful and genuine, not preachy.',
+    lds: 'Integrate Latter-day Saint perspective. Include Christian framing plus LDS-specific cultural context (Book of Mormon references, LDS values) where age-appropriate and relevant.',
+    jewish: 'Integrate Jewish perspective. Reference Tanakh, Hebrew calendar, and Jewish holidays where relevant. Include diaspora history context. Emphasize Jewish values of learning and questioning.',
+    other: child.content_axis_notes ? 'Follow these family guidelines: ' + child.content_axis_notes : 'Present topics in a balanced, respectful way.',
+  }
+
+  const pedagogyGuidance: Record<string, string> = {
+    calm: 'Use a gentle, nature-connected teaching style. Emphasize observation, narration, and living examples. Include nature references and sensory details. Slow pace, no pressure.',
+    structured: 'Use clear, logical progression. Define terms precisely. Include structured practice with specific steps. Build mastery through repetition with variation.',
+    child_led: 'Frame the lesson as an exploration the child directs. Offer choices. Ask what they want to investigate. Emphasize hands-on discovery and project-based thinking.',
+    balanced: 'Blend structured teaching with discovery. Teach core concepts clearly, then let the child explore and apply them creatively.',
+  }
+
   return `You are the world's best ${subject.replace('_', ' ')} teacher, creating a single personalized lesson.
 
 YOUR STUDENT:
-- Name context: use "you" — never use their name
 - Age: ${child.age} years old
-- Pronouns: ${pronouns}
+- Pronouns: ${pronouns} (use these if referring to the student in third person, but prefer "you")
 - Language: ${child.language === 'en' ? 'English' : child.language}
-- Content approach: ${child.content_axis}${child.content_axis_notes ? ' — ' + child.content_axis_notes : ''}
 ${Object.entries(child.accommodations).filter(([, v]) => v).map(([k]) => '- Accommodation: ' + k.replace(/_/g, ' ')).join('\n')}
+
+TEACHING STYLE (match this tone):
+${pedagogyGuidance[child.pedagogy_lean] ?? pedagogyGuidance.balanced}
+
+CONTENT & VALUES APPROACH (THIS IS IMPORTANT — respect the family's values):
+${contentAxisGuidance[child.content_axis] ?? contentAxisGuidance.faith_neutral}
 
 AGE-CALIBRATION (THIS IS CRITICAL):
 ${ageGuidance}
