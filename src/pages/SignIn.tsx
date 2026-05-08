@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Sprout } from 'lucide-react'
+import { GoogleIcon } from '@/components/ui/google-icon'
 
 export function SignIn() {
   const navigate = useNavigate()
@@ -114,6 +115,7 @@ export function SignIn() {
                 </div>
 
                 <Button variant="secondary" className="w-full" onClick={handleGoogle}>
+                  <GoogleIcon className="h-5 w-5 mr-2" />
                   Continue with Google
                 </Button>
               </>
