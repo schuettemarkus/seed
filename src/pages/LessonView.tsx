@@ -5,6 +5,7 @@ import { useAccommodations } from '@/hooks/useAccommodations'
 import { useChild } from '@/hooks/useChild'
 import { useAuth } from '@/hooks/useAuth'
 import { LessonPlayer } from '@/components/lesson/LessonPlayer'
+import { AICompanion } from '@/components/lesson/AICompanion'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import type { Lesson } from '@/types'
@@ -70,9 +71,18 @@ export function LessonView() {
         <LessonPlayer
           lesson={lesson}
           parentId={user?.id ?? ''}
+          child={child}
           onComplete={() => navigate(`/child/${lesson.child_id}/today`)}
         />
       </main>
+
+      {/* AI Companion floating chat */}
+      {child && (
+        <AICompanion
+          child={child}
+          lessonContext={`Subject: ${lesson.subject}, Topic: ${lesson.concept_node}, Title: ${lesson.title}`}
+        />
+      )}
     </div>
   )
 }

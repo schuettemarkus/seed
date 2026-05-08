@@ -13,6 +13,7 @@ import { TermsOfService } from '@/pages/TermsOfService'
 import { ChildToday } from '@/pages/ChildToday'
 import { LessonView } from '@/pages/LessonView'
 import { ParentDashboard } from '@/pages/ParentDashboard'
+import { WonderWall } from '@/pages/WonderWall'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -46,6 +47,7 @@ export function App() {
       <Route path="/child/:childId/today" element={<ProtectedRoute><ChildToday /></ProtectedRoute>} />
       <Route path="/child/:childId/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
       <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonView /></ProtectedRoute>} />
+      <Route path="/child/:childId/wonder" element={<ProtectedRoute><WonderWall /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Catch-all */}

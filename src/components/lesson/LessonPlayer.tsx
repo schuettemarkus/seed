@@ -8,12 +8,14 @@ import { SimulationSegment } from './SimulationSegment'
 import { MovementBreak } from './MovementBreak'
 import { FeedbackButton } from './FeedbackButton'
 import { PrintLessonButton } from './PrintLessonButton'
+import { AskWonderButton } from './AskWonderButton'
 import { ChevronRight, CheckCircle2, HelpCircle } from 'lucide-react'
-import type { Lesson, LessonSegment } from '@/types'
+import type { Lesson, LessonSegment, Child } from '@/types'
 
 interface Props {
   lesson: Lesson
   parentId: string
+  child?: Child | null
   onComplete: () => void
 }
 
@@ -164,6 +166,9 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
             ))}
           </div>
         )}
+
+        {/* Wonder button */}
+        <AskWonderButton childId={lesson.child_id} lessonId={lesson.id} />
 
         {/* Feedback */}
         <FeedbackButton lessonId={lesson.id} childId={lesson.child_id} parentId={parentId} />
