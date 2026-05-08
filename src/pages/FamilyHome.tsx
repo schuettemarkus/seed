@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useChildren } from '@/hooks/useChild'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Plus, Settings, LogOut, Sprout } from 'lucide-react'
+import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb } from 'lucide-react'
 
 export function FamilyHome() {
   const { user, parent, signOut } = useAuth()
@@ -18,6 +18,9 @@ export function FamilyHome() {
           <span className="font-display text-xl font-semibold">Seed</span>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/rhythm"><CalendarDays className="h-5 w-5" /></Link>
+          </Button>
           <Button variant="ghost" size="icon" asChild>
             <Link to="/settings"><Settings className="h-5 w-5" /></Link>
           </Button>
@@ -54,12 +57,18 @@ export function FamilyHome() {
                     Age {child.age} · {child.subjects.length} subject{child.subjects.length !== 1 ? 's' : ''}
                   </p>
                 </Link>
-                <div className="border-t border-border px-6 py-3">
-                  <Link
-                    to={`/child/${child.id}/edit`}
-                    className="text-xs text-sky hover:underline"
-                  >
-                    Edit profile
+                <div className="border-t border-border px-6 py-3 flex gap-4">
+                  <Link to={`/child/${child.id}/dashboard`} className="text-xs text-sky hover:underline flex items-center gap-1">
+                    <BarChart3 className="h-3 w-3" /> Progress
+                  </Link>
+                  <Link to={`/child/${child.id}/wonder`} className="text-xs text-sky hover:underline flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3" /> Wonders
+                  </Link>
+                  <Link to={`/child/${child.id}/keepsake`} className="text-xs text-sky hover:underline flex items-center gap-1">
+                    <BookOpen className="h-3 w-3" /> Keepsake
+                  </Link>
+                  <Link to={`/child/${child.id}/edit`} className="text-xs text-muted hover:underline ml-auto">
+                    Edit
                   </Link>
                 </div>
               </Card>
