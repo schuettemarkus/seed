@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import type { User, Session } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { supabase, DEMO_MODE } from '@/lib/supabase'
 import type { Parent } from '@/types'
 
 interface AuthState {
@@ -19,6 +19,7 @@ export function useAuth() {
   })
 
   const fetchParent = useCallback(async (userId: string) => {
+    if (DEMO_MODE) return null
     const { data } = await supabase
       .from('parents')
       .select('*')
@@ -28,6 +29,11 @@ export function useAuth() {
   }, [])
 
   useEffect(() => {
+    if (DEMO_MODE) {
+      setState({ user: null, session: null, parent: null, loading: false })
+      return
+    }
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       let parent: Parent | null = null
       if (session?.user) {
