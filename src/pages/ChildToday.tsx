@@ -63,15 +63,20 @@ export function ChildToday() {
   // Initial fetch
   useEffect(() => { fetchLessons() }, [fetchLessons])
 
-  // Auto-generate if no lessons, with progress callback that triggers refetch
+  // Auto-generate if lessons are missing for any subject
   useEffect(() => {
-    if (!child || loading || lessons.length > 0 || generatingRef.current) return
+    if (!child || loading || generatingRef.current) return
+
+    // Check if all child's subjects have a lesson for today
+    const existingSubjects = new Set(lessons.map((l) => l.subject))
+    const allCovered = child.subjects.every((s) => existingSubjects.has(s))
+    if (allCovered) return
+
     generatingRef.current = true
     setGenerating(true)
 
     function onProgress(p: GenerationProgress) {
       setGenProgress(p)
-      // Refetch after each lesson is done so it appears immediately
       if (p.status === 'done') fetchLessons()
     }
 
@@ -82,7 +87,7 @@ export function ChildToday() {
         setGenProgress(null)
         generatingRef.current = false
       })
-  }, [child, loading, lessons.length, fetchLessons])
+  }, [child, loading, lessons, fetchLessons])
 
   if (!child) {
     return (
@@ -102,9 +107,12 @@ export function ChildToday() {
       {/* Header */}
       <header className="px-6 py-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to="/home"><ArrowLeft className="h-5 w-5" /></Link>
-          </Button>
+          <Link
+            to="/home"
+            className="h-11 w-11 rounded-xl flex items-center justify-center hover:bg-black/[0.04] transition-colors touch-target"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
           <div className="text-center">
             <h1 className="font-display text-xl font-semibold">{child.name}'s Day</h1>
             <p className="text-xs text-muted">

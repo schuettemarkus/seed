@@ -145,23 +145,23 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
   if (completed) {
     return (
       <div className="space-y-6 py-4">
-        <div className="text-center py-6">
-          <CheckCircle2 className="h-12 w-12 text-sage mx-auto mb-4" />
+        <div className="text-center py-8 rounded-2xl bg-sage/[0.06] border border-sage/15">
+          <CheckCircle2 className="h-14 w-14 text-sage mx-auto mb-4" />
           <h2 className="font-display text-2xl font-semibold mb-2">Lesson complete!</h2>
-          <p className="text-muted">Great work on "{lesson.title}"</p>
+          <p className="text-muted">Great work on &ldquo;{lesson.title}&rdquo;</p>
         </div>
 
         {/* Check-for-understanding questions */}
         {lesson.questions && (lesson.questions as { question: string }[]).length > 0 && (
-          <div className="rounded-xl border border-border p-5 space-y-4">
+          <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6 space-y-4 shadow-sm shadow-black/[0.03]">
             <div className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-sky" />
               <h3 className="font-display text-base font-semibold">Check your understanding</h3>
             </div>
             {(lesson.questions as { question: string; hint?: string }[]).map((q, i) => (
-              <div key={i} className="rounded-lg bg-background p-4">
-                <p className="text-sm font-medium">{q.question}</p>
-                {q.hint && <p className="text-xs text-muted mt-1">Hint: {q.hint}</p>}
+              <div key={i} className="rounded-xl bg-sky/[0.06] border border-sky/15 p-4">
+                <p className="text-sm font-medium leading-relaxed">{q.question}</p>
+                {q.hint && <p className="text-xs text-muted mt-2 italic">Hint: {q.hint}</p>}
               </div>
             ))}
           </div>
@@ -178,7 +178,7 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
           <PrintLessonButton lesson={lesson} />
           <button
             onClick={onComplete}
-            className="rounded-lg bg-sage px-6 py-3 text-sm font-medium text-white hover:bg-sage-dark transition-colors touch-target"
+            className="rounded-xl bg-sage px-6 py-3.5 text-sm font-semibold text-white hover:bg-sage-dark shadow-sm shadow-sage/20 transition-all duration-200 active:scale-[0.97] touch-target"
           >
             Done
           </button>
@@ -205,25 +205,30 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
 
       {/* Hook on first segment */}
       {currentIndex === 0 && lesson.hook && (
-        <div className="rounded-xl bg-sage/5 border border-sage/20 p-5">
-          <p className="lesson-text text-foreground italic">{lesson.hook}</p>
+        <div className="rounded-2xl bg-sage/[0.06] backdrop-blur-sm border border-sage/15 p-6">
+          <p className="lesson-text text-foreground italic leading-relaxed">{lesson.hook}</p>
         </div>
       )}
 
       {/* Segment content */}
-      <div className="rounded-xl border border-border p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6 space-y-5 shadow-sm shadow-black/[0.03]">
         <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-sage" />
           <span className="text-xs font-medium text-muted uppercase tracking-wider">
             {segment.type.replace(/_/g, ' ')}
           </span>
         </div>
-        <h3 className="font-display text-lg font-semibold">{segment.title}</h3>
-        <div className="lesson-text text-muted leading-relaxed">{segment.content}</div>
+        <h3 className="font-display text-xl font-semibold leading-snug">{segment.title}</h3>
+        <div className="lesson-text text-foreground/80 leading-relaxed">{segment.content}</div>
 
-        {/* Instructions or interactive element */}
+        {/* Activity callout — prominent and inviting */}
         {segment.instructions && (
-          <div className="rounded-lg bg-sage/5 border border-sage/20 p-4">
-            <p className="text-sm font-medium text-sage">{segment.instructions}</p>
+          <div className="rounded-2xl bg-sage/[0.08] border-2 border-sage/20 p-5 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1.5 h-full bg-sage rounded-full" />
+            <div className="pl-3">
+              <p className="text-xs font-semibold text-sage uppercase tracking-wider mb-2">Your turn</p>
+              <p className="text-base font-medium text-foreground leading-relaxed">{segment.instructions}</p>
+            </div>
           </div>
         )}
 
@@ -233,11 +238,10 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
         )}
       </div>
 
-      {/* Next / Complete button — always shown for text and interactive segments,
-           and as fallback for specialized segments that don't self-advance */}
+      {/* Next / Complete button */}
       <button
         onClick={handleNext}
-        className="w-full rounded-lg bg-sage py-3 text-sm font-medium text-white hover:bg-sage-dark transition-colors touch-target flex items-center justify-center gap-2"
+        className="w-full rounded-xl bg-sage py-3.5 text-sm font-semibold text-white hover:bg-sage-dark shadow-sm shadow-sage/20 hover:shadow-md hover:shadow-sage/25 transition-all duration-200 active:scale-[0.97] touch-target flex items-center justify-center gap-2"
       >
         {isLast ? (
           <><CheckCircle2 className="h-4 w-4" /> Complete lesson</>

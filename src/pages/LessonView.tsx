@@ -95,9 +95,12 @@ export function LessonView() {
     <div className={`min-h-screen bg-background ${classes}`}>
       <header className="px-6 py-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" asChild>
-            <Link to={`/child/${lesson.child_id}/today`}><ArrowLeft className="h-5 w-5" /></Link>
-          </Button>
+          <Link
+            to={`/child/${lesson.child_id}/today`}
+            className="h-11 w-11 rounded-xl flex items-center justify-center hover:bg-black/[0.04] transition-colors touch-target"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
           <div className="text-center flex-1">
             <h1 className="font-display text-lg font-semibold truncate">{lesson.title}</h1>
           </div>
