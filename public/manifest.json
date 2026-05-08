@@ -1,0 +1,16 @@
+{
+  "name": "Seed — Homeschool Learning",
+  "short_name": "Seed",
+  "description": "A calm, curious place to grow. Personalized homeschool learning for ages 5–13.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAFAF7",
+  "theme_color": "#87A878",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
