@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase, DEMO_MODE } from '@/lib/supabase'
 import { DragDropSegment } from './DragDropSegment'
 import { DrawCanvasSegment } from './DrawCanvasSegment'
@@ -9,7 +9,7 @@ import { MovementBreak } from './MovementBreak'
 import { FeedbackButton } from './FeedbackButton'
 import { PrintLessonButton } from './PrintLessonButton'
 import { AskWonderButton } from './AskWonderButton'
-import { ChevronRight, CheckCircle2, HelpCircle } from 'lucide-react'
+import { ChevronRight, CheckCircle2, HelpCircle, Sparkles } from 'lucide-react'
 import type { Lesson, LessonSegment, Child } from '@/types'
 
 interface Props {
@@ -19,102 +19,118 @@ interface Props {
   onComplete: () => void
 }
 
-function InteractiveSegment({
-  segment,
-  onSegmentComplete,
-}: {
-  segment: LessonSegment
-  onSegmentComplete: () => void
-}) {
-  const data = segment.data ?? {}
+// Each segment is broken into discrete "steps" so the user digests one piece at a time
+interface Step {
+  type: 'hook' | 'content' | 'activity' | 'interactive' | 'break' | 'questions' | 'complete'
+  segmentIndex?: number
+  title?: string
+  body?: string
+  instruction?: string
+  segment?: LessonSegment
+}
 
+function InteractiveWidget({ segment, onDone }: { segment: LessonSegment; onDone: () => void }) {
+  const data = segment.data ?? {}
   switch (segment.type) {
     case 'drag_drop':
-      if (data.items && data.zones && data.correctMapping) {
-        return (
-          <DragDropSegment
-            data={data as { items: { id: string; label: string }[]; zones: { id: string; label: string }[]; correctMapping: Record<string, string> }}
-            onComplete={() => onSegmentComplete()}
-          />
-        )
-      }
+      if (data.items && data.zones && data.correctMapping)
+        return <DragDropSegment data={data as never} onComplete={onDone} />
       break
     case 'draw':
-      return (
-        <DrawCanvasSegment
-          prompt={segment.instructions}
-          onSave={() => onSegmentComplete()}
-        />
-      )
+      return <DrawCanvasSegment prompt={segment.instructions} onSave={onDone} />
     case 'voice':
-      return (
-        <VoiceAnswerSegment
-          prompt={segment.instructions}
-          onAnswer={() => onSegmentComplete()}
-        />
-      )
+      return <VoiceAnswerSegment prompt={segment.instructions} onAnswer={onDone} />
     case 'click_explore':
-      if (data.items) {
-        return (
-          <ClickExploreSegment
-            items={data.items as { id: string; label: string; content: string; icon?: string }[]}
-            instruction={segment.instructions}
-          />
-        )
-      }
+      if (data.items)
+        return <ClickExploreSegment items={data.items as never} instruction={segment.instructions} />
       break
     case 'simulation':
-      if (data.params) {
-        return (
-          <SimulationSegment
-            data={data as { title: string; description: string; params: { id: string; label: string; min: number; max: number; step: number; default: number; unit?: string }[]; compute: string }}
-            onComplete={onSegmentComplete}
-          />
-        )
-      }
+      if (data.params)
+        return <SimulationSegment data={data as never} onComplete={onDone} />
       break
   }
-
-  // Fallback: text/interactive segment — just show content
   return null
 }
 
 export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [showBreak, setShowBreak] = useState(false)
+  const [stepIndex, setStepIndex] = useState(0)
+  const [transitioning, setTransitioning] = useState(false)
   const [completed, setCompleted] = useState(false)
-  const [segmentStartTime] = useState(Date.now())
 
   const segments = lesson.segments ?? []
-  const segment = segments[currentIndex]
-  const isLast = currentIndex >= segments.length - 1
-  const breakPoint = Math.floor(segments.length / 2)
 
-  async function recordProgress(correct?: boolean) {
-    if (DEMO_MODE) return
-    const timeSpent = Math.round((Date.now() - segmentStartTime) / 1000)
-    await supabase.from('lesson_progress').insert({
-      lesson_id: lesson.id,
-      child_id: lesson.child_id,
-      segment_index: currentIndex,
-      correct: correct ?? null,
-      time_spent_seconds: timeSpent,
+  // Build step list from segments
+  const steps = useMemo<Step[]>(() => {
+    const s: Step[] = []
+
+    // Hook as first step
+    if (lesson.hook) {
+      s.push({ type: 'hook', body: lesson.hook })
+    }
+
+    const breakPoint = Math.floor(segments.length / 2)
+
+    segments.forEach((seg, i) => {
+      // Content step
+      s.push({
+        type: 'content',
+        segmentIndex: i,
+        title: seg.title,
+        body: seg.content,
+        segment: seg,
+      })
+
+      // Activity / instruction step (separate screen for prominence)
+      if (seg.instructions) {
+        s.push({
+          type: seg.type !== 'text' && seg.type !== 'interactive' ? 'interactive' : 'activity',
+          segmentIndex: i,
+          instruction: seg.instructions,
+          segment: seg,
+        })
+      }
+
+      // Movement break after midpoint segment
+      if (i === breakPoint - 1 && lesson.movement_break) {
+        s.push({ type: 'break' })
+      }
     })
-  }
 
-  function handleNext() {
-    recordProgress()
-    if (isLast) {
-      handleComplete()
-      return
+    // Questions step
+    if (lesson.questions && (lesson.questions as unknown[]).length > 0) {
+      s.push({ type: 'questions' })
     }
-    // Show movement break at midpoint
-    if (currentIndex === breakPoint - 1 && lesson.movement_break) {
-      setShowBreak(true)
-    } else {
-      setCurrentIndex((i) => i + 1)
+
+    // Completion step
+    s.push({ type: 'complete' })
+
+    return s
+  }, [lesson, segments])
+
+  const currentStep = steps[stepIndex]
+  const totalSteps = steps.length
+  const progressPct = ((stepIndex + 1) / totalSteps) * 100
+
+  const goNext = useCallback(() => {
+    if (transitioning) return
+    if (stepIndex >= totalSteps - 1) return
+
+    setTransitioning(true)
+    setTimeout(() => {
+      setStepIndex((i) => i + 1)
+      setTransitioning(false)
+    }, 150)
+
+    // Record progress when leaving a content step
+    if (currentStep?.segmentIndex !== undefined && !DEMO_MODE) {
+      supabase.from('lesson_progress').insert({
+        lesson_id: lesson.id,
+        child_id: lesson.child_id,
+        segment_index: currentStep.segmentIndex,
+        time_spent_seconds: 0,
+      }).then(() => {})
     }
-  }
+  }, [stepIndex, totalSteps, transitioning, currentStep, lesson])
 
   async function handleComplete() {
     if (!DEMO_MODE) {
@@ -126,23 +142,43 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
     setCompleted(true)
   }
 
-  // Movement break overlay
-  if (showBreak && lesson.movement_break) {
-    const breakData = lesson.movement_break as { activity?: string; duration_minutes?: number }
+  // Spacebar / Enter to advance
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === ' ' || e.key === 'Enter') {
+        // Don't advance if focused on an input/textarea/button
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return
+        e.preventDefault()
+        if (currentStep?.type === 'complete') {
+          if (!completed) handleComplete()
+          else onComplete()
+        } else {
+          goNext()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [goNext, currentStep, completed, onComplete])
+
+  if (!currentStep) return null
+
+  // Movement break
+  if (currentStep.type === 'break' && lesson.movement_break) {
+    const bd = lesson.movement_break as { activity?: string; duration_minutes?: number }
     return (
       <MovementBreak
-        activity={breakData.activity ?? 'Take a stretch, wiggle your body, or take 5 deep breaths.'}
-        durationMinutes={breakData.duration_minutes ?? 2}
-        onComplete={() => {
-          setShowBreak(false)
-          setCurrentIndex((i) => i + 1)
-        }}
+        activity={bd.activity ?? 'Take a stretch and some deep breaths.'}
+        durationMinutes={bd.duration_minutes ?? 2}
+        onComplete={goNext}
       />
     )
   }
 
-  // Completed state
-  if (completed) {
+  // Completed — done screen with feedback
+  if (currentStep.type === 'complete') {
+    if (!completed) handleComplete()
     return (
       <div className="space-y-6 py-4">
         <div className="text-center py-8 rounded-2xl bg-sage/[0.06] border border-sage/15">
@@ -150,30 +186,8 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
           <h2 className="font-display text-2xl font-semibold mb-2">Lesson complete!</h2>
           <p className="text-muted">Great work on &ldquo;{lesson.title}&rdquo;</p>
         </div>
-
-        {/* Check-for-understanding questions */}
-        {lesson.questions && (lesson.questions as { question: string }[]).length > 0 && (
-          <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6 space-y-4 shadow-sm shadow-black/[0.03]">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-sky" />
-              <h3 className="font-display text-base font-semibold">Check your understanding</h3>
-            </div>
-            {(lesson.questions as { question: string; hint?: string }[]).map((q, i) => (
-              <div key={i} className="rounded-xl bg-sky/[0.06] border border-sky/15 p-4">
-                <p className="text-sm font-medium leading-relaxed">{q.question}</p>
-                {q.hint && <p className="text-xs text-muted mt-2 italic">Hint: {q.hint}</p>}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Wonder button */}
         <AskWonderButton childId={lesson.child_id} lessonId={lesson.id} />
-
-        {/* Feedback */}
         <FeedbackButton lessonId={lesson.id} childId={lesson.child_id} parentId={parentId} />
-
-        {/* Print + Done */}
         <div className="flex items-center justify-between pt-2">
           <PrintLessonButton lesson={lesson} />
           <button
@@ -187,63 +201,107 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
     )
   }
 
-  if (!segment) return null
-
   return (
     <div className="space-y-6">
-      {/* Segment progress dots */}
-      <div className="flex gap-1">
-        {segments.map((_, i) => (
+      {/* Progress bar */}
+      <div className="space-y-2">
+        <div className="h-1.5 rounded-full bg-border overflow-hidden">
           <div
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i < currentIndex ? 'bg-sage' : i === currentIndex ? 'bg-sage/60' : 'bg-border'
-            }`}
+            className="h-full rounded-full bg-sage transition-all duration-500 ease-out"
+            style={{ width: `${progressPct}%` }}
           />
-        ))}
+        </div>
+        <div className="flex justify-between text-[10px] text-muted">
+          <span>Step {stepIndex + 1} of {totalSteps}</span>
+          <span className="opacity-50">Press spacebar or tap Next</span>
+        </div>
       </div>
 
-      {/* Hook on first segment */}
-      {currentIndex === 0 && lesson.hook && (
-        <div className="rounded-2xl bg-sage/[0.06] backdrop-blur-sm border border-sage/15 p-6">
-          <p className="lesson-text text-foreground italic leading-relaxed">{lesson.hook}</p>
-        </div>
-      )}
+      {/* Step content — with transition */}
+      <div
+        className={`transition-all duration-200 ease-out ${
+          transitioning ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'
+        }`}
+      >
+        {/* HOOK step */}
+        {currentStep.type === 'hook' && (
+          <div className="rounded-2xl bg-sage/[0.06] backdrop-blur-sm border border-sage/15 p-8">
+            <Sparkles className="h-6 w-6 text-sage mb-4" />
+            <p className="lesson-text text-foreground leading-relaxed text-lg">{currentStep.body}</p>
+          </div>
+        )}
 
-      {/* Segment content */}
-      <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6 space-y-5 shadow-sm shadow-black/[0.03]">
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full bg-sage" />
-          <span className="text-xs font-medium text-muted uppercase tracking-wider">
-            {segment.type.replace(/_/g, ' ')}
-          </span>
-        </div>
-        <h3 className="font-display text-xl font-semibold leading-snug">{segment.title}</h3>
-        <div className="lesson-text text-foreground/80 leading-relaxed">{segment.content}</div>
+        {/* CONTENT step */}
+        {currentStep.type === 'content' && (
+          <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-7 shadow-sm shadow-black/[0.03] space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-1.5 rounded-full bg-sage" />
+              <span className="text-xs font-medium text-muted uppercase tracking-wider">
+                {currentStep.segment?.type.replace(/_/g, ' ') ?? 'learn'}
+              </span>
+            </div>
+            {currentStep.title && (
+              <h3 className="font-display text-xl font-semibold leading-snug">{currentStep.title}</h3>
+            )}
+            <div className="lesson-text text-foreground/80 leading-relaxed">{currentStep.body}</div>
+          </div>
+        )}
 
-        {/* Activity callout — prominent and inviting */}
-        {segment.instructions && (
-          <div className="rounded-2xl bg-sage/[0.08] border-2 border-sage/20 p-5 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1.5 h-full bg-sage rounded-full" />
-            <div className="pl-3">
-              <p className="text-xs font-semibold text-sage uppercase tracking-wider mb-2">Your turn</p>
-              <p className="text-base font-medium text-foreground leading-relaxed">{segment.instructions}</p>
+        {/* ACTIVITY step — the big prominent callout */}
+        {currentStep.type === 'activity' && (
+          <div className="rounded-2xl bg-sage/[0.08] border-2 border-sage/25 p-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-2 h-full bg-sage rounded-full" />
+            <div className="pl-4 space-y-3">
+              <p className="text-xs font-bold text-sage uppercase tracking-widest">Your turn</p>
+              <p className="text-lg font-semibold text-foreground leading-relaxed">
+                {currentStep.instruction}
+              </p>
+              <p className="text-xs text-muted">Take your time — there's no rush.</p>
             </div>
           </div>
         )}
 
-        {/* Specialized interactive widgets (drag-drop, draw, etc.) */}
-        {segment.type !== 'text' && segment.type !== 'interactive' && (
-          <InteractiveSegment segment={segment} onSegmentComplete={handleNext} />
+        {/* INTERACTIVE step — specialized widget */}
+        {currentStep.type === 'interactive' && currentStep.segment && (
+          <div className="space-y-5">
+            <div className="rounded-2xl bg-sage/[0.08] border-2 border-sage/25 p-6 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-2 h-full bg-sage rounded-full" />
+              <div className="pl-4">
+                <p className="text-xs font-bold text-sage uppercase tracking-widest mb-2">Your turn</p>
+                <p className="text-base font-medium text-foreground leading-relaxed">
+                  {currentStep.instruction}
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6">
+              <InteractiveWidget segment={currentStep.segment} onDone={goNext} />
+            </div>
+          </div>
+        )}
+
+        {/* QUESTIONS step */}
+        {currentStep.type === 'questions' && (
+          <div className="rounded-2xl border border-border bg-surface backdrop-blur-xl p-6 space-y-4 shadow-sm shadow-black/[0.03]">
+            <div className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-sky" />
+              <h3 className="font-display text-base font-semibold">Check your understanding</h3>
+            </div>
+            {(lesson.questions as { question: string; hint?: string }[]).map((q, i) => (
+              <div key={i} className="rounded-xl bg-sky/[0.06] border border-sky/15 p-5">
+                <p className="text-base font-medium leading-relaxed">{q.question}</p>
+                {q.hint && <p className="text-sm text-muted mt-2 italic">Hint: {q.hint}</p>}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Next / Complete button */}
+      {/* Next button */}
       <button
-        onClick={handleNext}
+        onClick={goNext}
         className="w-full rounded-xl bg-sage py-3.5 text-sm font-semibold text-white hover:bg-sage-dark shadow-sm shadow-sage/20 hover:shadow-md hover:shadow-sage/25 transition-all duration-200 active:scale-[0.97] touch-target flex items-center justify-center gap-2"
       >
-        {isLast ? (
+        {stepIndex >= totalSteps - 2 ? (
           <><CheckCircle2 className="h-4 w-4" /> Complete lesson</>
         ) : (
           <>Next <ChevronRight className="h-4 w-4" /></>
