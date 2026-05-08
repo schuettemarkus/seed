@@ -7,6 +7,7 @@ import { SignUp } from '@/pages/SignUp'
 import { SignIn } from '@/pages/SignIn'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
+import { AuthCallback } from '@/pages/AuthCallback'
 
 // Lazy-loaded routes (code-split for performance)
 const COPPAConsent = lazy(() => import('@/pages/COPPAConsent').then((m) => ({ default: m.COPPAConsent })))
@@ -49,6 +50,7 @@ export function App() {
           <Route path="/signin" element={<SignIn />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
 
           {/* Protected — Parent flows */}
           <Route path="/consent" element={<ProtectedRoute><COPPAConsent /></ProtectedRoute>} />
