@@ -219,7 +219,17 @@ const BUILDERS: Record<Subject, (concept: string, child: Child, minutes: number)
  * Generate today's lessons for a child if none exist yet.
  * Creates one lesson per subject, scheduled for today.
  */
-export async function generateTodayLessons(child: Child): Promise<void> {
+export interface GenerationProgress {
+  current: number
+  total: number
+  subject: string
+  status: 'generating' | 'done' | 'error'
+}
+
+export async function generateTodayLessons(
+  child: Child,
+  onProgress?: (progress: GenerationProgress) => void,
+): Promise<void> {
   const today = new Date().toISOString().split('T')[0]
 
   // Check if lessons already exist for today
@@ -244,11 +254,14 @@ export async function generateTodayLessons(child: Child): Promise<void> {
     ? Math.round(attention.singleBlockMinutes * 0.7)
     : attention.singleBlockMinutes
 
-  const lessonsToInsert = []
-
-  for (const subject of child.subjects) {
+  const total = child.subjects.length
+  for (let i = 0; i < child.subjects.length; i++) {
+    const subject = child.subjects[i]
     const concepts = getNextConcepts(child, subject, completedConcepts, 1)
     const concept = concepts[0] ?? getConceptsForChild(child, subject)[0]
+    const label = subject.replace('_', ' ')
+
+    onProgress?.({ current: i + 1, total, subject: label, status: 'generating' })
 
     let lesson: LessonData
     if (AI_ENABLED) {
@@ -266,19 +279,20 @@ export async function generateTodayLessons(child: Child): Promise<void> {
       lesson = BUILDERS[subject](concept, child, blockMinutes)
     }
 
-    lessonsToInsert.push({
-      ...lesson,
-      child_id: child.id,
-      scheduled_for: today,
-    })
-  }
+    // Insert each lesson immediately so it appears in the UI right away
+    const { error: insertErr } = await supabase
+      .from('lessons')
+      .insert({
+        ...lesson,
+        child_id: child.id,
+        scheduled_for: today,
+      })
 
-  const { error } = await supabase
-    .from('lessons')
-    .insert(lessonsToInsert)
+    if (insertErr) {
+      console.error('Failed to insert lesson:', subject, insertErr)
+    }
 
-  if (error) {
-    console.error('Failed to generate lessons:', error)
+    onProgress?.({ current: i + 1, total, subject: label, status: 'done' })
   }
 }
 
