@@ -10,6 +10,9 @@ import { FamilyHome } from '@/pages/FamilyHome'
 import { Settings } from '@/pages/Settings'
 import { PrivacyPolicy } from '@/pages/PrivacyPolicy'
 import { TermsOfService } from '@/pages/TermsOfService'
+import { ChildToday } from '@/pages/ChildToday'
+import { LessonView } from '@/pages/LessonView'
+import { ParentDashboard } from '@/pages/ParentDashboard'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -40,6 +43,9 @@ export function App() {
       <Route path="/child/new" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
       <Route path="/child/:childId/edit" element={<ProtectedRoute><ChildSetup /></ProtectedRoute>} />
       <Route path="/home" element={<ProtectedRoute><FamilyHome /></ProtectedRoute>} />
+      <Route path="/child/:childId/today" element={<ProtectedRoute><ChildToday /></ProtectedRoute>} />
+      <Route path="/child/:childId/dashboard" element={<ProtectedRoute><ParentDashboard /></ProtectedRoute>} />
+      <Route path="/lesson/:lessonId" element={<ProtectedRoute><LessonView /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Catch-all */}
