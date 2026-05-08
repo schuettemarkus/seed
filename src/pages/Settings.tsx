@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { AdultInvites } from '@/components/parent/AdultInvites'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ArrowLeft, Sprout } from 'lucide-react'
 
 export function Settings() {
-  const { parent, signOut } = useAuth()
+  const { user, parent, signOut } = useAuth()
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,7 +28,7 @@ export function Settings() {
           <CardContent className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted">Email</span>
-              <span className="text-sm">{parent?.email}</span>
+              <span className="text-sm">{parent?.email ?? user?.email}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted">Name</span>
@@ -39,6 +40,9 @@ export function Settings() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Family invites */}
+        <AdultInvites parentId={user?.id ?? ''} />
 
         <Card>
           <CardHeader>

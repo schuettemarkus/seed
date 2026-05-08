@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Sprout } from 'lucide-react'
+import { Sprout, Mail } from 'lucide-react'
 
 export function SignUp() {
   const navigate = useNavigate()
@@ -13,23 +13,59 @@ export function SignUp() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const { error } = await signUp(email, password)
+    const { data, error } = await signUp(email, password)
     setLoading(false)
     if (error) {
       setError(error.message)
-    } else {
+      return
+    }
+    // If session exists, email confirmation is disabled — go straight through
+    if (data.session) {
       navigate('/consent')
+    } else {
+      // Email confirmation required — show "check your email"
+      setConfirmationSent(true)
     }
   }
 
   async function handleGoogle() {
     const { error } = await signInWithGoogle()
     if (error) setError(error.message)
+    // Google OAuth redirects away — no need to navigate
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-md">
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <Sprout className="h-8 w-8 text-sage" />
+            <span className="font-display text-2xl font-semibold">Seed</span>
+          </div>
+          <Card>
+            <CardContent className="text-center py-10">
+              <Mail className="h-12 w-12 text-sage mx-auto mb-4" />
+              <h2 className="font-display text-xl font-semibold mb-2">Check your email</h2>
+              <p className="text-sm text-muted max-w-sm mx-auto leading-relaxed">
+                We sent a confirmation link to <strong>{email}</strong>.
+                Click the link in the email to activate your account, then come back here to sign in.
+              </p>
+              <div className="mt-6">
+                <Link to="/signin" className="text-sm text-sky hover:underline">
+                  Go to sign in
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

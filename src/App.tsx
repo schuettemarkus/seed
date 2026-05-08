@@ -16,6 +16,8 @@ import { ParentDashboard } from '@/pages/ParentDashboard'
 import { WonderWall } from '@/pages/WonderWall'
 import { Keepsake } from '@/pages/Keepsake'
 import { Rhythm } from '@/pages/Rhythm'
+import { Compliance } from '@/pages/Compliance'
+import { InviteAccept } from '@/pages/InviteAccept'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -52,6 +54,8 @@ export function App() {
       <Route path="/child/:childId/wonder" element={<ProtectedRoute><WonderWall /></ProtectedRoute>} />
       <Route path="/child/:childId/keepsake" element={<ProtectedRoute><Keepsake /></ProtectedRoute>} />
       <Route path="/rhythm" element={<ProtectedRoute><Rhythm /></ProtectedRoute>} />
+      <Route path="/child/:childId/compliance" element={<ProtectedRoute><Compliance /></ProtectedRoute>} />
+      <Route path="/invite" element={<InviteAccept />} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
       {/* Catch-all */}
