@@ -13,10 +13,10 @@ export function FamilyHome() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 max-w-4xl mx-auto">
-        <div className="flex items-center gap-2">
+        <Link to="/home" className="flex items-center gap-2">
           <Sprout className="h-7 w-7 text-sage" />
           <span className="font-display text-xl font-semibold">Seed</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
             <Link to="/rhythm"><CalendarDays className="h-5 w-5" /></Link>

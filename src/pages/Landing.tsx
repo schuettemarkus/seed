@@ -40,10 +40,10 @@ export function Landing() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <Sprout className="h-7 w-7 text-sage" />
           <span className="font-display text-xl font-semibold text-foreground">Seed</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-3">
           <Button variant="ghost" asChild>
             <Link to="/signin">Sign in</Link>

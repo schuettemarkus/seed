@@ -1,10 +1,12 @@
+import { useEffect, useState, useRef } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useChild } from '@/hooks/useChild'
 import { useTodayPath } from '@/hooks/useTodayPath'
 import { useAccommodations } from '@/hooks/useAccommodations'
+import { generateTodayLessons } from '@/lib/lesson-generator'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { ArrowLeft, CheckCircle2, Circle, PlayCircle, Clock, Sparkles } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Circle, PlayCircle, Clock, Sparkles, Loader2 } from 'lucide-react'
 import type { Lesson } from '@/types'
 
 const SUBJECT_LABELS: Record<string, string> = {
@@ -37,8 +39,21 @@ function LessonIcon({ status }: { status: Lesson['status'] }) {
 export function ChildToday() {
   const { childId } = useParams()
   const { child } = useChild(childId)
-  const { lessons, loading, completedCount, totalCount } = useTodayPath(childId)
+  const { lessons, loading, completedCount, totalCount, refetch } = useTodayPath(childId)
   const { classes } = useAccommodations(child?.accommodations)
+  const [generating, setGenerating] = useState(false)
+  const generatedRef = useRef(false)
+
+  // Auto-generate today's lessons if none exist
+  useEffect(() => {
+    if (!child || loading || lessons.length > 0 || generatedRef.current) return
+    generatedRef.current = true
+    setGenerating(true)
+    generateTodayLessons(child).then(() => {
+      refetch()
+      setGenerating(false)
+    })
+  }, [child, loading, lessons.length, refetch])
 
   if (!child) {
     return (
@@ -85,14 +100,22 @@ export function ChildToday() {
 
       {/* Today Path — vertical timeline */}
       <main className="px-6 pb-12 max-w-2xl mx-auto">
-        {loading ? (
-          <div className="text-center text-muted py-12">Loading today's path...</div>
+        {loading || generating ? (
+          <Card className="text-center py-12">
+            <Loader2 className="h-10 w-10 text-sage mx-auto mb-4 animate-spin" />
+            <h2 className="font-display text-lg font-semibold mb-2">
+              {generating ? 'Preparing today\'s lessons...' : 'Loading...'}
+            </h2>
+            <p className="text-sm text-muted max-w-sm mx-auto">
+              Building a personalized learning path for {child.name}.
+            </p>
+          </Card>
         ) : lessons.length === 0 ? (
           <Card className="text-center py-12">
             <Sparkles className="h-10 w-10 text-sage mx-auto mb-4" />
             <h2 className="font-display text-lg font-semibold mb-2">No lessons yet</h2>
             <p className="text-sm text-muted max-w-sm mx-auto">
-              Lessons are being prepared for {child.name}. Check back soon — or ask a parent to generate today's curriculum.
+              Something went wrong generating lessons for {child.name}. Try refreshing the page.
             </p>
           </Card>
         ) : (
