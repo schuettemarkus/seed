@@ -3,6 +3,7 @@ import { MasteryMap } from './MasteryMap'
 import { EngagementHeatmap } from './EngagementHeatmap'
 import { WeeklyReport } from './WeeklyReport'
 import { UsageMeter } from './UsageMeter'
+import { ParentNotes } from './ParentNotes'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Lightbulb, BookOpen, Settings } from 'lucide-react'
@@ -69,6 +70,9 @@ export function ProgressHub({ child, parentId }: Props) {
 
         {/* AI usage transparency */}
         <UsageMeter parentId={parentId} />
+
+        {/* Parent notes */}
+        <ParentNotes childId={child.id} childName={child.name} />
       </main>
     </div>
   )

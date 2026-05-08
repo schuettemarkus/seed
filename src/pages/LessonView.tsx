@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { LessonPlayer } from '@/components/lesson/LessonPlayer'
 import { AICompanion } from '@/components/lesson/AICompanion'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from 'lucide-react'
 import type { Lesson } from '@/types'
 
 export function LessonView() {
@@ -16,45 +16,83 @@ export function LessonView() {
   const { user } = useAuth()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const { child } = useChild(lesson?.child_id)
   const { classes } = useAccommodations(child?.accommodations)
 
   useEffect(() => {
-    if (!lessonId) return
-    supabase
-      .from('lessons')
-      .select('*')
-      .eq('id', lessonId)
-      .single()
-      .then(({ data }) => {
-        setLesson(data as Lesson | null)
+    if (!lessonId) {
+      setLoading(false)
+      setError('No lesson ID provided')
+      return
+    }
+
+    const timeout = setTimeout(() => {
+      setLoading(false)
+      setError('Lesson is taking too long to load. Please go back and try again.')
+    }, 10000)
+
+    async function fetchLesson() {
+      try {
+        const { data, error: err } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('id', lessonId)
+          .maybeSingle()
+
+        clearTimeout(timeout)
+        if (err) {
+          console.error('Lesson fetch error:', err)
+          setError(err.message)
+          setLoading(false)
+          return
+        }
+        if (!data) {
+          setError('Lesson not found')
+          setLoading(false)
+          return
+        }
+        setLesson(data as Lesson)
         setLoading(false)
-        if (data && data.status === 'pending' && !DEMO_MODE) {
+        if (data.status === 'pending' && !DEMO_MODE) {
           supabase.from('lessons').update({ status: 'in_progress' }).eq('id', lessonId)
         }
-      })
+      } catch (e) {
+        clearTimeout(timeout)
+        console.error('Lesson fetch exception:', e)
+        setError(e instanceof Error ? e.message : 'Failed to load lesson')
+        setLoading(false)
+      }
+    }
+    fetchLesson()
+
+    return () => clearTimeout(timeout)
   }, [lessonId])
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted">Loading lesson...</div>
+        <div className="text-muted font-display text-lg">Loading lesson...</div>
       </div>
     )
   }
 
-  if (!lesson) {
+  if (error || !lesson) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted">Lesson not found</div>
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="text-center max-w-sm">
+          <AlertCircle className="h-10 w-10 text-terracotta mx-auto mb-4" />
+          <h2 className="font-display text-lg font-semibold mb-2">Couldn't load lesson</h2>
+          <p className="text-sm text-muted mb-4">{error ?? 'Lesson not found'}</p>
+          <Button variant="secondary" onClick={() => navigate(-1)}>Go back</Button>
+        </div>
       </div>
     )
   }
 
   return (
     <div className={`min-h-screen bg-background ${classes}`}>
-      {/* Header */}
       <header className="px-6 py-4 max-w-2xl mx-auto">
         <div className="flex items-center justify-between">
           <Button variant="ghost" size="icon" asChild>
@@ -76,7 +114,6 @@ export function LessonView() {
         />
       </main>
 
-      {/* AI Companion floating chat */}
       {child && (
         <AICompanion
           child={child}

@@ -4,7 +4,8 @@ import { buildLessonPrompt } from './curriculum-engine'
 import { getAttentionConfig } from './attention-spans'
 import type { Child, Subject, LessonSegment } from '@/types'
 
-const AI_ENABLED = !!import.meta.env.VITE_ANTHROPIC_API_KEY
+// Always try AI generation — the server-side proxy/function handles the API key
+const AI_ENABLED = true
 
 function fmt(concept: string): string {
   return concept.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())

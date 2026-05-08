@@ -4,14 +4,14 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 touch-target cursor-pointer',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 touch-target cursor-pointer active:scale-[0.97]',
   {
     variants: {
       variant: {
-        default: 'bg-sage text-white hover:bg-sage-dark',
-        secondary: 'bg-surface text-foreground border border-border hover:bg-background',
-        ghost: 'hover:bg-background',
-        destructive: 'bg-terracotta text-white hover:bg-terracotta/90',
+        default: 'bg-sage text-white hover:bg-sage-dark shadow-sm shadow-sage/20 hover:shadow-md hover:shadow-sage/25',
+        secondary: 'bg-surface/80 backdrop-blur-lg text-foreground border border-border hover:bg-surface shadow-sm shadow-black/[0.03]',
+        ghost: 'hover:bg-black/[0.04]',
+        destructive: 'bg-terracotta text-white hover:bg-terracotta/90 shadow-sm shadow-terracotta/20',
         link: 'text-sky underline-offset-4 hover:underline',
       },
       size: {

@@ -23,6 +23,8 @@ const Keepsake = lazy(() => import('@/pages/Keepsake').then((m) => ({ default: m
 const Rhythm = lazy(() => import('@/pages/Rhythm').then((m) => ({ default: m.Rhythm })))
 const Compliance = lazy(() => import('@/pages/Compliance').then((m) => ({ default: m.Compliance })))
 const InviteAccept = lazy(() => import('@/pages/InviteAccept').then((m) => ({ default: m.InviteAccept })))
+const LessonHistory = lazy(() => import('@/pages/LessonHistory').then((m) => ({ default: m.LessonHistory })))
+const Pricing = lazy(() => import('@/pages/Pricing').then((m) => ({ default: m.Pricing })))
 
 function LoadingScreen() {
   return (
@@ -51,6 +53,7 @@ export function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/pricing" element={<Pricing />} />
 
           {/* Protected — Parent flows */}
           <Route path="/consent" element={<ProtectedRoute><COPPAConsent /></ProtectedRoute>} />
@@ -65,6 +68,7 @@ export function App() {
           <Route path="/child/:childId/keepsake" element={<ProtectedRoute><Keepsake /></ProtectedRoute>} />
           <Route path="/rhythm" element={<ProtectedRoute><Rhythm /></ProtectedRoute>} />
           <Route path="/child/:childId/compliance" element={<ProtectedRoute><Compliance /></ProtectedRoute>} />
+          <Route path="/child/:childId/history" element={<ProtectedRoute><LessonHistory /></ProtectedRoute>} />
           <Route path="/invite" element={<InviteAccept />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 

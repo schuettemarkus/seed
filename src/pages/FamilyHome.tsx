@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useChildren } from '@/hooks/useChild'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb } from 'lucide-react'
+import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb, Clock } from 'lucide-react'
 
 export function FamilyHome() {
   const { user, parent, signOut } = useAuth()
@@ -66,6 +66,9 @@ export function FamilyHome() {
                   </Link>
                   <Link to={`/child/${child.id}/keepsake`} className="text-xs text-sky hover:underline flex items-center gap-1">
                     <BookOpen className="h-3 w-3" /> Keepsake
+                  </Link>
+                  <Link to={`/child/${child.id}/history`} className="text-xs text-sky hover:underline flex items-center gap-1">
+                    <Clock className="h-3 w-3" /> History
                   </Link>
                   <Link to={`/child/${child.id}/edit`} className="text-xs text-muted hover:underline ml-auto">
                     Edit

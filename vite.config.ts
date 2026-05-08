@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
           rewrite: () => '/v1/messages',
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
-              proxyReq.setHeader('x-api-key', env.VITE_ANTHROPIC_API_KEY ?? '')
+              proxyReq.setHeader('x-api-key', env.ANTHROPIC_API_KEY ?? '')
               proxyReq.setHeader('anthropic-version', '2023-06-01')
               // Remove browser headers that trigger Anthropic's CORS check
               proxyReq.removeHeader('origin')

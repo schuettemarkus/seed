@@ -184,10 +184,38 @@ export function ChildToday() {
                 </div>
 
                 {allDone && (
-                  <Card className="mt-6 text-center py-8 border-sage/30 bg-sage/5">
-                    <Sparkles className="h-8 w-8 text-sage mx-auto mb-3" />
-                    <h2 className="font-display text-lg font-semibold">All done for today!</h2>
-                    <p className="text-sm text-muted mt-1">Great work, {child.name}. Time to play, explore, or rest.</p>
+                  <Card className="mt-6 py-8 border-sage/30 bg-sage/5">
+                    <div className="text-center mb-6">
+                      <Sparkles className="h-8 w-8 text-sage mx-auto mb-3" />
+                      <h2 className="font-display text-xl font-semibold">All done for today!</h2>
+                      <p className="text-sm text-muted mt-1">Amazing work, {child.name}. Time to play, explore, or rest.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 px-6 mb-4">
+                      <div className="rounded-lg bg-white/60 p-3 text-center">
+                        <div className="font-display text-2xl font-semibold text-sage">{totalCount}</div>
+                        <div className="text-xs text-muted">Lessons done</div>
+                      </div>
+                      <div className="rounded-lg bg-white/60 p-3 text-center">
+                        <div className="font-display text-2xl font-semibold text-sage">
+                          {lessons.reduce((sum, l) => sum + (l.estimated_minutes ?? 0), 0)}
+                        </div>
+                        <div className="text-xs text-muted">Minutes learned</div>
+                      </div>
+                    </div>
+                    <div className="px-6 mb-4">
+                      <div className="flex flex-wrap gap-1.5 justify-center">
+                        {[...new Set(lessons.map((l) => l.subject))].map((sub) => (
+                          <span key={sub} className="rounded-full px-3 py-1 text-xs font-medium bg-white/60 text-sage">
+                            {SUBJECT_LABELS[sub] ?? sub}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-center px-6">
+                      <Link to={`/child/${child.id}/dashboard`} className="text-sm text-sky hover:underline">
+                        View full progress report
+                      </Link>
+                    </div>
                   </Card>
                 )}
               </div>
