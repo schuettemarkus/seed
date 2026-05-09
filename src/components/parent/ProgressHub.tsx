@@ -4,6 +4,7 @@ import { EngagementHeatmap } from './EngagementHeatmap'
 import { WeeklyReport } from './WeeklyReport'
 import { UsageMeter } from './UsageMeter'
 import { ParentNotes } from './ParentNotes'
+import { SubjectLevels } from './SubjectLevels'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Lightbulb, BookOpen, Settings } from 'lucide-react'
@@ -58,6 +59,10 @@ export function ProgressHub({ child, parentId }: Props) {
             </Link>
           </Card>
         </div>
+
+        {/* Weekly report with chart */}
+        {/* Subject levels */}
+        <SubjectLevels childId={child.id} subjects={child.subjects} />
 
         {/* Weekly report with chart */}
         <WeeklyReport childId={child.id} childName={child.name} />

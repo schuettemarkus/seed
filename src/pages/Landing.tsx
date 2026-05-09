@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
 import { Sprout, BookOpen, Brain, Heart, Shield, Leaf, Clock, Sparkles, Users } from 'lucide-react'
 
@@ -54,6 +55,11 @@ const FEATURES = [
 ]
 
 export function Landing() {
+  const { user, loading } = useAuth()
+
+  // Redirect logged-in users to their dashboard
+  if (!loading && user) return <Navigate to="/home" replace />
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}

@@ -142,15 +142,20 @@ SUBJECT: ${subject.replace('_', ' ')}
 TARGET LENGTH: ${blockMinutes} minutes of focused learning
 
 ${priorLessonSummaries?.length ? 'PRIOR LESSONS (for continuity):\n' + priorLessonSummaries.join('\n') + '\n' : ''}
-WHAT MAKES A WORLD-CLASS LESSON:
-1. HOOK — Open with something that makes them curious. A surprising fact, a "what if" scenario, or a mystery to solve. Never "Today we're going to learn about X."
-2. TEACH REAL CONTENT — Every segment must contain actual knowledge, not meta-commentary about learning. Teach specific facts, skills, or principles. A child should finish knowing something concrete they didn't know before.
-3. MAKE IT TANGIBLE — Give examples from their world. For a 5-year-old: toys, animals, snacks, playground. For a 10-year-old: sports, games, technology, nature. For a 13-year-old: social media, career paths, science breakthroughs.
-4. BUILD UNDERSTANDING — Scaffold from what they know to what's new. Each segment builds on the previous one.
-5. END WITH WONDER — Leave them with a question or idea that sticks with them after the lesson ends.
+LESSON DESIGN — DUOLINGO-INSPIRED, WORLD-CLASS QUALITY:
+Structure every lesson as a series of small, rewarding steps. Each step should feel like a mini-win.
 
-MODERN WORLD CONNECTION:
-Naturally connect the topic to today's world — technology, science, real careers, how things actually work. For ages 5-7, relate to tech they see (tablets, robots, video calls). For ages 8-10, introduce how computers and data relate. For ages 11+, connect to AI, coding, data science, digital ethics, and future career paths. Never forced — only when it genuinely enriches understanding.
+1. HOOK — A surprising fact, mystery, or "what if" scenario. Never "Today we'll learn about X."
+2. TEACH in tiny bites — Each segment teaches ONE specific thing. Keep it short and punchy. After teaching, IMMEDIATELY give the child something to do with what they just learned.
+3. ACTIVITY after every teaching moment — Every content segment MUST have an "instructions" field with a specific, actionable exercise:
+   - For ages 5-7: "Clap 3 times, then hold up 5 fingers", "Point to something round", "Say the word out loud 3 times"
+   - For ages 8-10: "Write your answer on paper", "Draw a quick sketch", "Explain this to someone near you"
+   - For ages 11-13: "Write a 2-sentence response", "Calculate this", "Make a prediction before reading on"
+4. MAKE IT TANGIBLE — Use examples from their world. Never abstract.
+5. BUILD incrementally — Each step builds on the last. The child should feel themselves getting smarter.
+6. END WITH WONDER — A question that sticks with them after the lesson.
+
+MODERN WORLD: Connect naturally to technology, AI, real careers. For 5-7: tablets, robots. For 8-10: coding, data. For 11+: AI, digital ethics, future careers.
 
 OUTPUT — Return ONLY valid JSON, no markdown code blocks:
 {
@@ -159,13 +164,13 @@ OUTPUT — Return ONLY valid JSON, no markdown code blocks:
   "segments": [
     {
       "type": "text",
-      "title": "Short engaging section title",
-      "content": "The actual teaching content — rich, specific, age-appropriate. 3-6 sentences for young kids, 5-10 for older. TEACH something real here.",
-      "instructions": "What the child should do, think about, or try"
+      "title": "Short step title (3-5 words)",
+      "content": "Teach ONE concept clearly. 2-4 sentences for young kids, 4-6 for older. Be specific — real facts, real examples.",
+      "instructions": "A specific hands-on activity tied to what was just taught. Make it physical, verbal, or creative — not just 'think about it'."
     }
   ],
   "questions": [
-    { "question": "A thought-provoking check-for-understanding question", "answer": "The expected answer", "hint": "A gentle nudge in the right direction" }
+    { "question": "A specific question that tests understanding (not 'what did you learn?')", "answer": "The correct answer", "hint": "A clue that guides without giving away the answer" }
   ],
   "movement_break": {
     "activity": "A specific, fun, ${blockMinutes <= 10 ? '1' : '2'}-minute movement activity appropriate for a ${child.age}-year-old",
@@ -174,14 +179,14 @@ OUTPUT — Return ONLY valid JSON, no markdown code blocks:
 }
 
 REQUIREMENTS:
-- 3-4 segments for ages 5-8, 4-5 segments for ages 9-13
-- Cycle segment types: text, then interactive, then text — vary the rhythm
-- Content must be factually accurate and genuinely educational
-- Warm, encouraging tone — never condescending
-- No pedagogy method names (no "Singapore Math", "Montessori", etc.)
-- No badges, points, streaks, or gamification language
+- 4-6 segments — more steps with less content each. Like Duolingo: learn a little, practice immediately, repeat
+- Every segment MUST have both "content" (teaching) and "instructions" (activity). No segment without an activity
+- Keep each segment's content to 2-5 sentences max. Short and punchy beats long and thorough
+- Activities must be SPECIFIC and ACTIONABLE — "hold up 3 fingers" not "think about numbers"
+- Factually accurate. Warm, encouraging tone. Never condescending
+- No pedagogy method names. No gamification language (no points, badges, streaks, XP)
 - No violence, romantic content, or scary imagery
-- Movement break: specific and fun, not generic "do jumping jacks"
+- Movement break: specific, fun, and connected to the lesson topic when possible
 ${child.accommodations.faster_pacing ? '- FASTER PACING: Skip recap, go straight to new material, include challenge extensions' : ''}
 ${child.accommodations.dyslexia_font ? '- DYSLEXIA SUPPORT: Shorter sentences, simpler vocabulary, more whitespace in content' : ''}
 ${child.accommodations.shorter_blocks ? '- SHORTER BLOCKS: Compress to essential content only, fewer segments' : ''}`

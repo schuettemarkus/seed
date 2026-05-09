@@ -138,6 +138,35 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
         .from('lessons')
         .update({ status: 'completed', completed_at: new Date().toISOString() })
         .eq('id', lesson.id)
+
+      // Update mastery state — advance concept from introduced -> practicing -> proficient
+      const { data: existing } = await supabase
+        .from('mastery_state')
+        .select('level')
+        .eq('child_id', lesson.child_id)
+        .eq('concept_node', lesson.concept_node)
+        .maybeSingle()
+
+      const nextLevel: Record<string, string> = {
+        introduced: 'practicing',
+        practicing: 'proficient',
+        proficient: 'mastered',
+        mastered: 'mastered',
+      }
+
+      if (existing) {
+        await supabase.from('mastery_state')
+          .update({ level: nextLevel[existing.level] ?? 'practicing', last_seen_at: new Date().toISOString() })
+          .eq('child_id', lesson.child_id)
+          .eq('concept_node', lesson.concept_node)
+      } else {
+        await supabase.from('mastery_state').insert({
+          child_id: lesson.child_id,
+          subject: lesson.subject,
+          concept_node: lesson.concept_node,
+          level: 'introduced',
+        })
+      }
     }
     setCompleted(true)
   }
