@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { supabase, DEMO_MODE } from '@/lib/supabase'
+import { useTextToSpeech } from '@/hooks/useTextToSpeech'
 import { DragDropSegment } from './DragDropSegment'
 import { DrawCanvasSegment } from './DrawCanvasSegment'
 import { VoiceAnswerSegment } from './VoiceAnswerSegment'
@@ -9,6 +10,7 @@ import { MovementBreak } from './MovementBreak'
 import { FeedbackButton } from './FeedbackButton'
 import { PrintLessonButton } from './PrintLessonButton'
 import { AskWonderButton } from './AskWonderButton'
+import { VoicePlayback } from './VoicePlayback'
 import { ChevronRight, CheckCircle2, HelpCircle, Sparkles } from 'lucide-react'
 import type { Lesson, LessonSegment, Child } from '@/types'
 
@@ -56,6 +58,9 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
   const [stepIndex, setStepIndex] = useState(0)
   const [transitioning, setTransitioning] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [autoRead, setAutoRead] = useState(false)
+  const tts = useTextToSpeech()
+  const prevStepRef = useRef(-1)
 
   const segments = lesson.segments ?? []
 
@@ -110,6 +115,38 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
   const currentStep = steps[stepIndex]
   const totalSteps = steps.length
   const progressPct = ((stepIndex + 1) / totalSteps) * 100
+
+  // Get readable text for current step
+  function getStepText(step: Step): string {
+    const parts: string[] = []
+    if (step.title) parts.push(step.title)
+    if (step.body) parts.push(step.body)
+    if (step.instruction) parts.push('Your turn. ' + step.instruction)
+    return parts.join('. ')
+  }
+
+  // Read aloud the current step
+  function readCurrentStep() {
+    if (!currentStep) return
+    const text = getStepText(currentStep)
+    if (text) tts.speak(text)
+    setAutoRead(true)
+  }
+
+  // Auto-read when step changes (if auto-read is enabled)
+  useEffect(() => {
+    if (!autoRead || prevStepRef.current === stepIndex) return
+    prevStepRef.current = stepIndex
+    if (currentStep) {
+      const text = getStepText(currentStep)
+      if (text) tts.speak(text)
+    }
+  }, [stepIndex, autoRead, currentStep])
+
+  // Stop speech on unmount
+  useEffect(() => {
+    return () => tts.stop()
+  }, [])
 
   const goNext = useCallback(() => {
     if (transitioning) return
@@ -232,12 +269,23 @@ export function LessonPlayer({ lesson, parentId, onComplete }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Progress bar */}
+      {/* Progress bar + voice controls */}
       <div className="space-y-2">
-        <div className="h-1.5 rounded-full bg-border overflow-hidden">
-          <div
-            className="h-full rounded-full bg-sage transition-all duration-500 ease-out"
-            style={{ width: `${progressPct}%` }}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-1.5 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full rounded-full bg-sage transition-all duration-500 ease-out"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <VoicePlayback
+            speaking={tts.speaking}
+            available={tts.available}
+            voices={tts.voices}
+            selectedVoiceURI={tts.selectedVoiceURI}
+            onPlay={readCurrentStep}
+            onStop={tts.stop}
+            onSelectVoice={tts.selectVoice}
           />
         </div>
         <div className="flex justify-between text-[10px] text-muted">

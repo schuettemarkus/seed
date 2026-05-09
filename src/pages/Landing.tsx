@@ -61,21 +61,21 @@ export function Landing() {
   if (!loading && user) return <Navigate to="/home" replace />
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <Link to="/" className="flex items-center gap-2">
+      <nav className="flex items-center justify-between px-4 sm:px-6 py-4 max-w-6xl mx-auto">
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
           <Sprout className="h-7 w-7 text-sage" />
           <span className="font-display text-xl font-semibold text-foreground">Seed</span>
         </Link>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" asChild>
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
             <Link to="/pricing">Pricing</Link>
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" size="sm" asChild>
             <Link to="/signin">Sign in</Link>
           </Button>
-          <Button asChild>
+          <Button size="sm" asChild>
             <Link to="/signup">Get Started</Link>
           </Button>
         </div>
