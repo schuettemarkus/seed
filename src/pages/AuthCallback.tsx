@@ -1,59 +1,59 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Sprout } from 'lucide-react'
 
 export function AuthCallback() {
   const navigate = useNavigate()
+  const handled = useRef(false)
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>
+    if (handled.current) return
+    handled.current = true
 
-    async function handleCallback() {
-      try {
-        const params = new URLSearchParams(window.location.search)
-        const code = params.get('code')
+    async function resolveSession() {
+      const params = new URLSearchParams(window.location.search)
+      const code = params.get('code')
 
-        if (code) {
+      // Try exchanging the PKCE code if present
+      if (code) {
+        try {
           const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) {
-            console.error('Auth callback error:', error.message)
-            navigate('/signin', { replace: true })
-            return
-          }
+          if (error) console.warn('Code exchange error:', error.message)
+        } catch (e) {
+          console.warn('Code exchange exception:', e)
         }
-
-        // Wait briefly for auth state to settle
-        await new Promise((r) => setTimeout(r, 500))
-
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (session) {
-          const { data: parent } = await supabase
-            .from('parents')
-            .select('id')
-            .eq('id', session.user.id)
-            .maybeSingle()
-
-          navigate(parent ? '/home' : '/consent', { replace: true })
-        } else {
-          navigate('/signin', { replace: true })
-        }
-      } catch (err) {
-        console.error('Auth callback unexpected error:', err)
-        navigate('/signin', { replace: true })
       }
+
+      // Poll for session — the exchange or onAuthStateChange may resolve it
+      for (let i = 0; i < 20; i++) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) return session
+        await new Promise((r) => setTimeout(r, 500))
+      }
+
+      return null
     }
 
-    // Safety timeout — never stay stuck
-    timeout = setTimeout(() => {
-      console.warn('Auth callback timed out, redirecting to signin')
+    resolveSession().then(async (session) => {
+      if (!session) {
+        console.warn('Auth callback: no session after waiting')
+        navigate('/signin', { replace: true })
+        return
+      }
+
+      // Check if parent profile exists → route new vs returning users
+      const { data: parent } = await supabase
+        .from('parents')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle()
+
+      navigate(parent ? '/home' : '/consent', { replace: true })
+    }).catch((err) => {
+      console.error('Auth callback error:', err)
       navigate('/signin', { replace: true })
-    }, 10000)
-
-    handleCallback().finally(() => clearTimeout(timeout))
-
-    return () => clearTimeout(timeout)
+    })
   }, [navigate])
 
   return (

@@ -36,7 +36,22 @@ function LoadingScreen() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
-  if (loading) return <LoadingScreen />
+
+  if (loading) {
+    // Supabase persists sessions in localStorage — if one exists, render
+    // optimistically so back-navigation doesn't flash a loading screen.
+    // The auth check still completes in the background.
+    try {
+      const hasSession = Object.keys(localStorage).some(
+        (k) => k.startsWith('sb-') && k.endsWith('-auth-token'),
+      )
+      if (hasSession) return <>{children}</>
+    } catch {
+      // localStorage unavailable — fall through to loading screen
+    }
+    return <LoadingScreen />
+  }
+
   if (!user) return <Navigate to="/signin" replace />
   return <>{children}</>
 }

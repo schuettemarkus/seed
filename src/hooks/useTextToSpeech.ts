@@ -5,6 +5,65 @@ export interface VoiceOption {
   label: string
 }
 
+// Modern neural / premium voice patterns — these sound closest to ChatGPT / Alexa
+const PREMIUM_PATTERNS = [
+  /\bpremium\b/i,
+  /\benhanced\b/i,
+  /\bneural\b/i,
+  /\bnatural\b/i,
+  /\bsiri\b/i,
+]
+
+// Friendly, warm female voices to prefer (ordered by quality)
+const PREFERRED_VOICES = [
+  // Apple neural (macOS 13+ / iOS 16+)
+  /^siri/i,
+  // Google cloud voices (Chrome)
+  /^google\b.*\bfemale\b/i,
+  /^google\b.*\bus\b/i,
+  // Microsoft neural (Edge)
+  /^microsoft\b.*\baria\b/i,
+  /^microsoft\b.*\bjenny\b/i,
+  /^microsoft\b.*\bmichelle\b/i,
+  // Apple premium voices
+  /\bsamantha\b.*\bpremium\b/i,
+  /\bsamantha\b.*\benhanced\b/i,
+  // Good fallbacks
+  /\bsamantha\b/i,
+  /\bkaren\b/i,
+  /\bvictoria\b/i,
+  /\bfiona\b/i,
+  /\btessa\b/i,
+]
+
+function voiceScore(v: SpeechSynthesisVoice): number {
+  let score = 0
+  const name = v.name
+
+  // Cloud / premium voices are almost always higher quality
+  if (!v.localService) score += 50
+
+  // Match against premium quality indicators
+  for (const pat of PREMIUM_PATTERNS) {
+    if (pat.test(name)) { score += 40; break }
+  }
+
+  // Match against preferred voice names (earlier = higher score)
+  for (let i = 0; i < PREFERRED_VOICES.length; i++) {
+    if (PREFERRED_VOICES[i].test(name)) {
+      score += 30 - i // earlier in list = higher score
+      break
+    }
+  }
+
+  // Slight bonus for female-sounding names
+  if (/female|samantha|karen|victoria|fiona|tessa|jenny|aria|siri|zira|susan|moira/i.test(name)) {
+    score += 5
+  }
+
+  return score
+}
+
 export function useTextToSpeech() {
   const [voices, setVoices] = useState<VoiceOption[]>([])
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('')
@@ -17,37 +76,26 @@ export function useTextToSpeech() {
       const allVoices = speechSynthesis.getVoices()
       if (allVoices.length === 0) return
 
-      // Filter to English voices, prefer high-quality ones
+      // Filter to English voices, sort by quality score
       const english = allVoices
         .filter((v) => v.lang.startsWith('en'))
         .map((v) => ({
           voice: v,
-          label: v.name.replace(/\(.*\)/, '').trim() + (v.localService ? '' : ' (Online)'),
+          label: v.name.replace(/\(.*\)/, '').trim() + (v.localService ? '' : ' (Cloud)'),
+          score: voiceScore(v),
         }))
-        .sort((a, b) => {
-          // Prefer female voices first
-          const aFemale = /female|samantha|karen|victoria|zira|susan|fiona|moira|tessa/i.test(a.voice.name)
-          const bFemale = /female|samantha|karen|victoria|zira|susan|fiona|moira|tessa/i.test(b.voice.name)
-          if (aFemale && !bFemale) return -1
-          if (!aFemale && bFemale) return 1
-          // Then prefer online/premium voices
-          if (!a.voice.localService && b.voice.localService) return -1
-          if (a.voice.localService && !b.voice.localService) return 1
-          return a.voice.name.localeCompare(b.voice.name)
-        })
+        .sort((a, b) => b.score - a.score)
+        .map(({ voice, label }) => ({ voice, label }))
 
       setVoices(english)
 
-      // Auto-select a friendly female voice
+      // Auto-select the best available voice
       const saved = localStorage.getItem('seed-voice-uri')
       if (saved && english.some((v) => v.voice.voiceURI === saved)) {
         setSelectedVoiceURI(saved)
       } else {
-        // Find best default: Samantha, Karen, or first female-sounding voice
-        const preferred = english.find((v) =>
-          /samantha|karen|victoria|fiona|tessa/i.test(v.voice.name),
-        ) ?? english[0]
-        if (preferred) setSelectedVoiceURI(preferred.voice.voiceURI)
+        // First voice is already the best scored
+        if (english[0]) setSelectedVoiceURI(english[0].voice.voiceURI)
       }
     }
 
@@ -70,8 +118,12 @@ export function useTextToSpeech() {
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.voice = voice
-    utterance.rate = 0.92
-    utterance.pitch = 1.05
+
+    // Tune for a warm, conversational tone — closer to Alexa / ChatGPT pacing
+    const isCloudVoice = !voice.localService
+    utterance.rate = isCloudVoice ? 1.0 : 0.95   // cloud voices handle normal speed well
+    utterance.pitch = isCloudVoice ? 1.0 : 1.02   // minimal pitch shift for natural sound
+
     utterance.onstart = () => setSpeaking(true)
     utterance.onend = () => setSpeaking(false)
     utterance.onerror = () => setSpeaking(false)
