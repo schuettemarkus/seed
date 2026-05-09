@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useChildren } from '@/hooks/useChild'
+import { useInvitedFamilies } from '@/hooks/useInvitedFamilies'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb, Clock, CheckCircle2 } from 'lucide-react'
+import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb, Clock, CheckCircle2, Users } from 'lucide-react'
 import type { Child } from '@/types'
 
 const SUBJECT_COLORS: Record<string, string> = {
@@ -54,7 +55,7 @@ function useChildStats(childId: string) {
   return stats
 }
 
-function ChildCard({ child }: { child: Child }) {
+function ChildCard({ child, isInvited }: { child: Child; isInvited?: boolean }) {
   const stats = useChildStats(child.id)
   const todayPct = stats.totalToday > 0 ? (stats.completedToday / stats.totalToday) * 100 : 0
   const allDoneToday = stats.completedToday === stats.totalToday && stats.totalToday > 0
@@ -122,9 +123,11 @@ function ChildCard({ child }: { child: Child }) {
         <Link to={`/child/${child.id}/history`} className="text-[11px] text-sky hover:underline flex items-center gap-1">
           <Clock className="h-3 w-3" /> History
         </Link>
-        <Link to={`/child/${child.id}/edit`} className="text-[11px] text-muted hover:underline ml-auto">
-          Edit
-        </Link>
+        {!isInvited && (
+          <Link to={`/child/${child.id}/edit`} className="text-[11px] text-muted hover:underline ml-auto">
+            Edit
+          </Link>
+        )}
       </div>
     </Card>
   )
@@ -134,11 +137,14 @@ export function FamilyHome() {
   const navigate = useNavigate()
   const { user, parent, signOut } = useAuth()
   const { children, loading } = useChildren(user?.id)
+  const { families: invitedFamilies, loading: invitedLoading } = useInvitedFamilies(user?.id)
 
   async function handleSignOut() {
     await signOut()
     navigate('/', { replace: true })
   }
+
+  const isLoading = loading || invitedLoading
 
   return (
     <div className="min-h-screen bg-background">
@@ -168,23 +174,48 @@ export function FamilyHome() {
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
 
-        {loading ? (
+        {isLoading ? (
           <div className="text-muted">Loading...</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {children.map((child) => (
-              <ChildCard key={child.id} child={child} />
-            ))}
+          <>
+            {/* Own children */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {children.map((child) => (
+                <ChildCard key={child.id} child={child} />
+              ))}
 
-            <Card className="flex items-center justify-center min-h-[200px] border-dashed cursor-pointer hover:border-sage/50 transition-colors">
-              <Link to="/child/new" className="flex flex-col items-center gap-3 p-6 text-center">
-                <div className="h-12 w-12 rounded-full bg-sage/10 flex items-center justify-center">
-                  <Plus className="h-6 w-6 text-sage" />
+              <Card className="flex items-center justify-center min-h-[200px] border-dashed cursor-pointer hover:border-sage/50 transition-colors">
+                <Link to="/child/new" className="flex flex-col items-center gap-3 p-6 text-center">
+                  <div className="h-12 w-12 rounded-full bg-sage/10 flex items-center justify-center">
+                    <Plus className="h-6 w-6 text-sage" />
+                  </div>
+                  <span className="text-sm font-medium text-muted">Add a child</span>
+                </Link>
+              </Card>
+            </div>
+
+            {/* Invited families */}
+            {invitedFamilies.map((family, idx) => (
+              <div key={idx} className="mt-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-5 w-5 text-sky" />
+                  <h2 className="font-display text-lg font-semibold">
+                    {family.inviterName
+                      ? `${family.inviterName}'s Family`
+                      : 'Shared Family'}
+                  </h2>
+                  <span className="text-xs text-muted capitalize rounded-full bg-sky/10 px-2.5 py-0.5">
+                    {family.role.replace('_', ' ')}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-muted">Add a child</span>
-              </Link>
-            </Card>
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {family.children.map((child) => (
+                    <ChildCard key={child.id} child={child} isInvited />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </main>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { useChild } from '@/hooks/useChild'
 import { useAccommodations } from '@/hooks/useAccommodations'
 import { supabase } from '@/lib/supabase'
@@ -39,6 +40,7 @@ function LessonIcon({ status }: { status: Lesson['status'] }) {
 
 export function ChildToday() {
   const { childId } = useParams()
+  const { user } = useAuth()
   const { child } = useChild(childId)
   const { classes } = useAccommodations(child?.accommodations)
   const [lessons, setLessons] = useState<Lesson[]>([])
@@ -46,6 +48,7 @@ export function ChildToday() {
   const [generating, setGenerating] = useState(false)
   const [genProgress, setGenProgress] = useState<GenerationProgress | null>(null)
   const generatingRef = useRef(false)
+  const isOwner = child && user && child.parent_id === user.id
 
   const fetchLessons = useCallback(async () => {
     if (!childId) return
@@ -63,9 +66,9 @@ export function ChildToday() {
   // Initial fetch
   useEffect(() => { fetchLessons() }, [fetchLessons])
 
-  // Auto-generate if lessons are missing for any subject
+  // Auto-generate if lessons are missing for any subject (only for the owning parent)
   useEffect(() => {
-    if (!child || loading || generatingRef.current) return
+    if (!child || loading || generatingRef.current || !isOwner) return
 
     // Check if all child's subjects have a lesson for today
     const existingSubjects = new Set(lessons.map((l) => l.subject))

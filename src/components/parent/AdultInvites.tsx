@@ -3,7 +3,7 @@ import { supabase, DEMO_MODE } from '@/lib/supabase'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { UserPlus, Trash2, Mail, CheckCircle2 } from 'lucide-react'
+import { UserPlus, Trash2, Mail, CheckCircle2, Copy } from 'lucide-react'
 import type { FamilyInvite, InviteRole } from '@/types'
 
 const ROLE_OPTIONS: { value: InviteRole; label: string; desc: string }[] = [
@@ -15,6 +15,36 @@ const ROLE_OPTIONS: { value: InviteRole; label: string; desc: string }[] = [
 
 interface Props {
   parentId: string
+}
+
+function InviteLink({ token }: { token: string }) {
+  const [copied, setCopied] = useState(false)
+  const url = `${window.location.origin}/invite?token=${token}`
+
+  function handleCopy() {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-2">
+      <div className="flex-1 min-w-0 rounded-lg bg-black/[0.03] px-3 py-1.5 text-[11px] text-muted truncate font-mono">
+        {url}
+      </div>
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px] font-medium text-sage hover:bg-sage/10 transition-colors touch-target"
+      >
+        {copied ? (
+          <><CheckCircle2 className="h-3.5 w-3.5" /> Copied</>
+        ) : (
+          <><Copy className="h-3.5 w-3.5" /> Copy link</>
+        )}
+      </button>
+    </div>
+  )
 }
 
 export function AdultInvites({ parentId }: Props) {
@@ -84,6 +114,7 @@ export function AdultInvites({ parentId }: Props) {
         </div>
         <p className="text-xs text-muted">
           Invite co-parents, grandparents, or tutors to view your children's progress.
+          They'll get a link to sign up and join your family.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -112,7 +143,7 @@ export function AdultInvites({ parentId }: Props) {
 
         {sent && (
           <div className="flex items-center gap-2 text-sm text-sage font-medium">
-            <CheckCircle2 className="h-4 w-4" /> Invite sent!
+            <CheckCircle2 className="h-4 w-4" /> Invite created! Share the link below.
           </div>
         )}
 
@@ -120,20 +151,30 @@ export function AdultInvites({ parentId }: Props) {
         {invites.length > 0 && (
           <div className="divide-y divide-border">
             {invites.map((invite) => (
-              <div key={invite.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{invite.email}</p>
-                  <p className="text-xs text-muted capitalize">
-                    {invite.role.replace('_', ' ')} · {invite.status}
-                  </p>
+              <div key={invite.id} className="py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{invite.email}</p>
+                    <p className="text-xs text-muted capitalize">
+                      {invite.role.replace('_', ' ')} · {invite.status}
+                    </p>
+                  </div>
+                  {invite.status === 'pending' && (
+                    <button
+                      onClick={() => revokeInvite(invite.id)}
+                      className="text-muted hover:text-terracotta p-1 touch-target"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
                 {invite.status === 'pending' && (
-                  <button
-                    onClick={() => revokeInvite(invite.id)}
-                    className="text-muted hover:text-terracotta p-1 touch-target"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <InviteLink token={invite.invite_token} />
+                )}
+                {invite.status === 'accepted' && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-[11px] text-sage">
+                    <CheckCircle2 className="h-3 w-3" /> Joined your family
+                  </div>
                 )}
               </div>
             ))}

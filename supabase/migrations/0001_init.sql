@@ -261,3 +261,75 @@ create policy "parents_own_compliance" on compliance_logs
 -- Usage logs
 create policy "parents_own_usage" on usage_logs
   for all using (parent_id = auth.uid()) with check (parent_id = auth.uid());
+
+-- ============ INVITED USER POLICIES ============
+-- Invitees can read invites addressed to their email
+create policy "invitees_read_own" on family_invites
+  for select using (lower(email) = lower(auth.jwt() ->> 'email'));
+
+-- Invitees can accept their own pending invites
+create policy "invitees_accept" on family_invites
+  for update using (
+    lower(email) = lower(auth.jwt() ->> 'email')
+    and status = 'pending'
+  );
+
+-- Invited users can read the inviting parent's profile
+create policy "invited_read_parent" on parents
+  for select using (
+    id in (select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted')
+  );
+
+-- Invited users can read children of families they belong to
+create policy "invited_read_children" on children
+  for select using (
+    parent_id in (select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted')
+  );
+
+-- Invited users can read lessons
+create policy "invited_read_lessons" on lessons
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
+
+-- Invited users can read lesson progress
+create policy "invited_read_progress" on lesson_progress
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
+
+-- Invited users can read mastery state
+create policy "invited_read_mastery" on mastery_state
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
+
+-- Invited users can read wonder questions
+create policy "invited_read_wonder" on wonder_questions
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
+
+-- Invited users can read portfolio entries
+create policy "invited_read_portfolio" on portfolio_entries
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
+
+-- Invited users can read compliance logs
+create policy "invited_read_compliance" on compliance_logs
+  for select using (
+    child_id in (select id from children where parent_id in (
+      select parent_id from family_invites where invited_user_id = auth.uid() and status = 'accepted'
+    ))
+  );
