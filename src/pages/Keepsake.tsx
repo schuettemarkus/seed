@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useChild } from '@/hooks/useChild'
 import { PortfolioGallery } from '@/components/keepsake/PortfolioGallery'
 import { KeepsakePDFExport } from '@/components/keepsake/KeepsakePDFExport'
+import { ProGate } from '@/components/ProGate'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, BookOpen } from 'lucide-react'
 
@@ -38,7 +39,9 @@ export function Keepsake() {
       </header>
 
       <main className="px-6 py-4 max-w-4xl mx-auto">
-        <PortfolioGallery childId={child.id} childName={child.name} />
+        <ProGate feature="Keepsake Portfolio">
+          <PortfolioGallery childId={child.id} childName={child.name} />
+        </ProGate>
       </main>
     </div>
   )

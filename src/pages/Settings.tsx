@@ -1,18 +1,24 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useSubscription } from '@/hooks/useSubscription'
 import { supabase } from '@/lib/supabase'
 import { AdultInvites } from '@/components/parent/AdultInvites'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ArrowLeft, Sprout, Download, Trash2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Sprout, Download, Trash2, AlertCircle, Sparkles, CreditCard, CheckCircle2, Loader2 } from 'lucide-react'
 
 export function Settings() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user, parent, signOut } = useAuth()
+  const { isPro, stripeCustomerId } = useSubscription()
   const [exporting, setExporting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+
+  const billingSuccess = searchParams.get('billing') === 'success'
 
   async function handleExport() {
     if (!user) return
@@ -63,6 +69,28 @@ export function Settings() {
     }
   }
 
+  async function handleManageBilling() {
+    if (!stripeCustomerId) return
+    setPortalLoading(true)
+    try {
+      const res = await fetch('/api/stripe-portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: stripeCustomerId,
+          returnUrl: window.location.origin + '/settings',
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (e) {
+      console.error('Portal error:', e)
+    }
+    setPortalLoading(false)
+  }
+
   async function handleSignOut() {
     await signOut()
     navigate('/', { replace: true })
@@ -81,6 +109,17 @@ export function Settings() {
       </header>
 
       <main className="px-6 py-4 max-w-3xl mx-auto space-y-6">
+        {/* Billing success banner */}
+        {billingSuccess && (
+          <div className="rounded-xl bg-sage/10 border border-sage/20 p-4 flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-sage flex-shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-sage-dark">Welcome to Seed Pro!</p>
+              <p className="text-xs text-muted">Your subscription is active. All pro features are now unlocked.</p>
+            </div>
+          </div>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>Account</CardTitle>
@@ -96,8 +135,55 @@ export function Settings() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted">Plan</span>
-              <span className="text-sm capitalize">{parent?.subscription_tier ?? 'free'}</span>
+              <span className="text-sm">
+                {isPro ? (
+                  <span className="inline-flex items-center gap-1.5 text-sage font-medium">
+                    <Sparkles className="h-3.5 w-3.5" /> Seed Pro
+                  </span>
+                ) : (
+                  'Free'
+                )}
+              </span>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Billing card */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-sage" />
+              <CardTitle>Billing</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {isPro && stripeCustomerId ? (
+              <>
+                <p className="text-sm text-muted">
+                  You're on the <strong className="text-foreground">Seed Pro</strong> plan ($9.99/month).
+                  Manage your subscription, update payment methods, or cancel anytime.
+                </p>
+                <Button variant="secondary" className="w-full" onClick={handleManageBilling} disabled={portalLoading}>
+                  {portalLoading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Opening billing portal...</>
+                  ) : (
+                    <><CreditCard className="h-4 w-4 mr-2" /> Manage subscription</>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted">
+                  You're on the <strong className="text-foreground">Free</strong> plan. Upgrade to Pro to unlock
+                  unlimited children, Wonder Wall, AI Companion, keepsake portfolio, and more.
+                </p>
+                <Button className="w-full" asChild>
+                  <Link to="/pricing">
+                    <Sparkles className="h-4 w-4 mr-2" /> Upgrade to Seed Pro
+                  </Link>
+                </Button>
+              </>
+            )}
           </CardContent>
         </Card>
 

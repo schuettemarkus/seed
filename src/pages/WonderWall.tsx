@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useChild } from '@/hooks/useChild'
 import { supabase } from '@/lib/supabase'
+import { ProGate } from '@/components/ProGate'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft, Lightbulb, Sparkles, MessageCircle } from 'lucide-react'
@@ -47,6 +48,7 @@ export function WonderWall() {
       </header>
 
       <main className="px-6 py-4 max-w-3xl mx-auto space-y-8">
+        <ProGate feature="Wonder Wall">
         {loading ? (
           <div className="text-muted text-center py-12">Loading wonders...</div>
         ) : questions.length === 0 ? (
@@ -127,6 +129,7 @@ export function WonderWall() {
             )}
           </>
         )}
+        </ProGate>
       </main>
     </div>
   )

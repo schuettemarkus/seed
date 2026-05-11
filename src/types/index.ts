@@ -5,7 +5,7 @@ export interface Parent {
   email: string
   full_name: string | null
   timezone: string
-  subscription_tier: 'free' | 'solo' | 'family'
+  subscription_tier: 'free' | 'pro'
   stripe_customer_id: string | null
   default_content_axis: ContentAxis
   created_at: string

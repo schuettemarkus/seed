@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
+import { useSubscription } from '@/hooks/useSubscription'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Sprout, Check } from 'lucide-react'
+import { Sprout, Check, CheckCircle2, Loader2 } from 'lucide-react'
 
 const FREE_FEATURES = [
   'Personalized daily lessons for 1 child',
@@ -27,6 +30,36 @@ const PRO_FEATURES = [
 ]
 
 export function Pricing() {
+  const { user } = useAuth()
+  const { isPro } = useSubscription()
+  const [loading, setLoading] = useState(false)
+
+  async function handleUpgrade() {
+    if (!user) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/stripe-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          returnUrl: window.location.origin,
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error('Stripe checkout error:', data.error)
+        setLoading(false)
+      }
+    } catch (e) {
+      console.error('Checkout error:', e)
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
@@ -35,12 +68,20 @@ export function Pricing() {
           <span className="font-display text-xl font-semibold text-foreground">Seed</span>
         </Link>
         <div className="flex items-center gap-3">
-          <Button variant="ghost" asChild>
-            <Link to="/signin">Sign in</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
+          {user ? (
+            <Button variant="ghost" asChild>
+              <Link to="/home">Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link to="/signin">Sign in</Link>
+              </Button>
+              <Button asChild>
+                <Link to="/signup">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
       </nav>
 
@@ -76,9 +117,15 @@ export function Pricing() {
               ))}
             </ul>
             <div className="mt-8">
-              <Button variant="secondary" className="w-full" asChild>
-                <Link to="/signup">Start free</Link>
-              </Button>
+              {user && !isPro ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-sage font-medium py-2.5">
+                  <CheckCircle2 className="h-4 w-4" /> Your current plan
+                </div>
+              ) : !user ? (
+                <Button variant="secondary" className="w-full" asChild>
+                  <Link to="/signup">Start free</Link>
+                </Button>
+              ) : null}
             </div>
           </Card>
 
@@ -108,10 +155,26 @@ export function Pricing() {
               ))}
             </ul>
             <div className="mt-8">
-              <Button className="w-full" asChild>
-                <Link to="/signup">Start 14-day free trial</Link>
-              </Button>
-              <p className="text-xs text-muted text-center mt-2">No credit card required to start</p>
+              {isPro ? (
+                <div className="flex items-center justify-center gap-2 text-sm text-sage font-medium py-2.5">
+                  <CheckCircle2 className="h-4 w-4" /> Your current plan
+                </div>
+              ) : user ? (
+                <Button className="w-full" onClick={handleUpgrade} disabled={loading}>
+                  {loading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Redirecting to checkout...</>
+                  ) : (
+                    'Start 14-day free trial'
+                  )}
+                </Button>
+              ) : (
+                <Button className="w-full" asChild>
+                  <Link to="/signup">Start 14-day free trial</Link>
+                </Button>
+              )}
+              {!isPro && (
+                <p className="text-xs text-muted text-center mt-2">No credit card required to start</p>
+              )}
             </div>
           </Card>
         </div>

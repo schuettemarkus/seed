@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useChild } from '@/hooks/useChild'
 import { supabase } from '@/lib/supabase'
+import { ProGate } from '@/components/ProGate'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ArrowLeft, FileText, Printer } from 'lucide-react'
@@ -157,6 +158,7 @@ export function Compliance() {
       </header>
 
       <main className="px-6 py-4 max-w-3xl mx-auto space-y-6">
+        <ProGate feature="Compliance Reports">
         {/* State selector */}
         <Card>
           <CardHeader>
@@ -213,6 +215,7 @@ export function Compliance() {
             Print Report
           </Button>
         </div>
+        </ProGate>
       </main>
     </div>
   )

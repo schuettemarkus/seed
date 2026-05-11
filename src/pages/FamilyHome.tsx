@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { useSubscription } from '@/hooks/useSubscription'
 import { useChildren } from '@/hooks/useChild'
 import { useInvitedFamilies } from '@/hooks/useInvitedFamilies'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb, Clock, CheckCircle2, Users } from 'lucide-react'
+import { Plus, Settings, LogOut, Sprout, CalendarDays, BarChart3, BookOpen, Lightbulb, Clock, CheckCircle2, Users, Sparkles } from 'lucide-react'
 import type { Child } from '@/types'
 
 const SUBJECT_COLORS: Record<string, string> = {
@@ -136,6 +137,7 @@ function ChildCard({ child, isInvited }: { child: Child; isInvited?: boolean }) 
 export function FamilyHome() {
   const navigate = useNavigate()
   const { user, parent, signOut } = useAuth()
+  const { isPro } = useSubscription()
   const { children, loading } = useChildren(user?.id)
   const { families: invitedFamilies, loading: invitedLoading } = useInvitedFamilies(user?.id)
 
@@ -184,14 +186,25 @@ export function FamilyHome() {
                 <ChildCard key={child.id} child={child} />
               ))}
 
-              <Card className="flex items-center justify-center min-h-[200px] border-dashed cursor-pointer hover:border-sage/50 transition-colors">
-                <Link to="/child/new" className="flex flex-col items-center gap-3 p-6 text-center">
-                  <div className="h-12 w-12 rounded-full bg-sage/10 flex items-center justify-center">
-                    <Plus className="h-6 w-6 text-sage" />
-                  </div>
-                  <span className="text-sm font-medium text-muted">Add a child</span>
-                </Link>
-              </Card>
+              {(isPro || children.length === 0) ? (
+                <Card className="flex items-center justify-center min-h-[200px] border-dashed cursor-pointer hover:border-sage/50 transition-colors">
+                  <Link to="/child/new" className="flex flex-col items-center gap-3 p-6 text-center">
+                    <div className="h-12 w-12 rounded-full bg-sage/10 flex items-center justify-center">
+                      <Plus className="h-6 w-6 text-sage" />
+                    </div>
+                    <span className="text-sm font-medium text-muted">Add a child</span>
+                  </Link>
+                </Card>
+              ) : (
+                <Card className="flex items-center justify-center min-h-[200px] border-dashed">
+                  <Link to="/pricing" className="flex flex-col items-center gap-3 p-6 text-center">
+                    <div className="h-12 w-12 rounded-full bg-sage/10 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 text-sage" />
+                    </div>
+                    <span className="text-sm font-medium text-muted">Upgrade for more children</span>
+                  </Link>
+                </Card>
+              )}
             </div>
 
             {/* Invited families */}

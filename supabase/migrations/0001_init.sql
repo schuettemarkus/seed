@@ -4,7 +4,7 @@ create table parents (
   email text not null,
   full_name text,
   timezone text default 'America/Denver',
-  subscription_tier text default 'free' check (subscription_tier in ('free','solo','family')),
+  subscription_tier text default 'free' check (subscription_tier in ('free','pro')),
   stripe_customer_id text,
   default_content_axis text default 'faith_neutral',
   created_at timestamptz default now()

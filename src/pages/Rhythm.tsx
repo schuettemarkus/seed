@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { RhythmPlanner } from '@/components/rhythm/RhythmPlanner'
+import { ProGate } from '@/components/ProGate'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
@@ -25,7 +26,9 @@ export function Rhythm() {
       </header>
 
       <main className="px-6 py-4 max-w-3xl mx-auto">
-        <RhythmPlanner parentId={user?.id ?? ''} />
+        <ProGate feature="Family Rhythm Planner">
+          <RhythmPlanner parentId={user?.id ?? ''} />
+        </ProGate>
       </main>
     </div>
   )

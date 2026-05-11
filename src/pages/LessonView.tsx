@@ -4,6 +4,7 @@ import { supabase, DEMO_MODE } from '@/lib/supabase'
 import { useAccommodations } from '@/hooks/useAccommodations'
 import { useChild } from '@/hooks/useChild'
 import { useAuth } from '@/hooks/useAuth'
+import { useSubscription } from '@/hooks/useSubscription'
 import { LessonPlayer } from '@/components/lesson/LessonPlayer'
 import { AICompanion } from '@/components/lesson/AICompanion'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ export function LessonView() {
   const { lessonId } = useParams()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isPro } = useSubscription()
   const [lesson, setLesson] = useState<Lesson | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -117,7 +119,7 @@ export function LessonView() {
         />
       </main>
 
-      {child && (
+      {child && isPro && (
         <AICompanion
           child={child}
           lessonContext={`Subject: ${lesson.subject}, Topic: ${lesson.concept_node}, Title: ${lesson.title}`}
